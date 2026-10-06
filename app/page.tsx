@@ -12,12 +12,13 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Các trường thông tin chính (bao gồm số dư)
+  // Các trường thông tin chính
   const [accountNumber, setAccountNumber] = useState('');
   const [accountPass, setAccountPass] = useState('');
   const [userEmail, setUserEmail] = useState('');
   const [serverBroker, setServerBroker] = useState('');
   const [balance, setBalance] = useState('');
+  const [botRequest, setBotRequest] = useState(''); // <-- Thêm state cho Yêu cầu setup / Gói bot
   const [submitting, setSubmitting] = useState(false);
 
   // Tìm kiếm & Phân trang
@@ -57,6 +58,7 @@ export default function AdminDashboard() {
         user_email: userEmail,
         server_broker: serverBroker,
         balance: parseFloat(balance),
+        bot_request: botRequest, // <-- Lưu yêu cầu setup vào Supabase
       },
     ]);
 
@@ -68,6 +70,7 @@ export default function AdminDashboard() {
       setUserEmail('');
       setServerBroker('');
       setBalance('');
+      setBotRequest(''); // Reset ô nhập yêu cầu
       fetchAccounts();
     }
     setSubmitting(false);
@@ -91,7 +94,8 @@ export default function AdminDashboard() {
     return (
       acc.account_number?.toLowerCase().includes(searchLower) ||
       acc.user_email?.toLowerCase().includes(searchLower) ||
-      acc.server_broker?.toLowerCase().includes(searchLower)
+      acc.server_broker?.toLowerCase().includes(searchLower) ||
+      acc.bot_request?.toLowerCase().includes(searchLower)
     );
   });
 
@@ -185,6 +189,18 @@ export default function AdminDashboard() {
               />
             </div>
 
+            {/* Ô nhập Yêu cầu setup / Gói Bot */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Yêu cầu setup / Gói Bot</label>
+              <input
+                type="text"
+                placeholder="Ví dụ: Gói Gold V1 / Copy Trade..."
+                value={botRequest}
+                onChange={(e) => setBotRequest(e.target.value)}
+                className="w-full border rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+              />
+            </div>
+
             <div className="md:col-span-3">
               <button
                 type="submit"
@@ -229,6 +245,7 @@ export default function AdminDashboard() {
                   <th className="p-3">Pass</th>
                   <th className="p-3">Email</th>
                   <th className="p-3">Server broker</th>
+                  <th className="p-3">Yêu cầu setup</th> {/* Cột mới thêm */}
                   <th className="p-3 text-right">Số dư</th>
                   <th className="p-3 text-center">Hành động</th>
                 </tr>
@@ -236,11 +253,11 @@ export default function AdminDashboard() {
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="p-6 text-center text-gray-500">Đang tải dữ liệu...</td>
+                    <td colSpan={7} className="p-6 text-center text-gray-500">Đang tải dữ liệu...</td>
                   </tr>
                 ) : currentAccounts.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="p-6 text-center text-gray-500">Chưa có dữ liệu phù hợp.</td>
+                    <td colSpan={7} className="p-6 text-center text-gray-500">Chưa có dữ liệu phù hợp.</td>
                   </tr>
                 ) : (
                   currentAccounts.map((acc: any) => (
@@ -249,6 +266,7 @@ export default function AdminDashboard() {
                       <td className="p-3 font-mono text-gray-600">{acc.account_pass}</td>
                       <td className="p-3 text-gray-800">{acc.user_email}</td>
                       <td className="p-3 font-medium text-gray-700">{acc.server_broker}</td>
+                      <td className="p-3 font-medium text-purple-600">{acc.bot_request || '—'}</td> {/* Hiển thị nội dung yêu cầu */}
                       <td className="p-3 text-right font-bold text-green-600">
                         ${Number(acc.balance || 0).toLocaleString()}
                       </td>
