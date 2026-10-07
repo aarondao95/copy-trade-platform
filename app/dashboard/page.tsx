@@ -54,7 +54,6 @@ export default function AdminDashboard() {
     fetchAccounts();
   }, []);
 
-  // Xử lý khi bấm nút "Xem Dashboard"
   function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     if (!clientEmail.trim()) {
@@ -66,8 +65,8 @@ export default function AdminDashboard() {
     setCurrentPage(1);
   }
 
-  // Xử lý khi bấm nút "🚪 Thoát"
-  function handleLogout() {
+  function handleLogout(e: React.MouseEvent) {
+    e.preventDefault(); // Ngăn chặn reload trang khi bấm nút
     setIsLoggedIn(false);
     setClientEmail('');
     localStorage.removeItem('client_email');
@@ -161,11 +160,11 @@ export default function AdminDashboard() {
     <main className="min-h-screen bg-gray-950 text-gray-100 p-6 md:p-10">
       <div className="max-w-7xl mx-auto space-y-8">
         
-        {/* HEADER TÍCH HỢP Ô EMAIL, NÚT XEM DASHBOARD VÀ NÚT THOÁT LUÔN HIỆN DIỆN */}
+        {/* HEADER TÍCH HỢP Ô EMAIL, NÚT XEM DASHBOARD VÀ NÚT THOÁT */}
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 flex flex-col lg:flex-row justify-between items-center gap-4 shadow-xl">
           <div>
-            <h1 className="text-2xl font-bold text-white">Investor Dashboard - Theo dõi Hiệu suất[cite: 5]</h1>
-            <p className="text-sm text-gray-400 mt-1">Hệ thống đồng bộ dữ liệu Real-time từ VPS & MetaTrader[cite: 5]</p>
+            <h1 className="text-2xl font-bold text-white">Investor Dashboard - Theo dõi Hiệu suất</h1>
+            <p className="text-sm text-gray-400 mt-1">Hệ thống đồng bộ dữ liệu Real-time từ VPS & MetaTrader</p>
           </div>
           
           <form onSubmit={handleLogin} className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
@@ -178,15 +177,15 @@ export default function AdminDashboard() {
             />
             <button
               type="submit"
-              className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition shadow-lg shadow-blue-600/20[cite: 5]"
+              className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition shadow-lg shadow-blue-600/20"
             >
-              Xem Dashboard[cite: 5]
+              Xem Dashboard
             </button>
             <button
               type="button"
               onClick={handleLogout}
               className="bg-red-600 hover:bg-red-700 text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition shadow-lg shadow-red-600/20"
-              title="Xóa email đang lọc và thoát"
+              title="Thoát tài khoản"
             >
               🚪 Thoát
             </button>
@@ -351,7 +350,6 @@ export default function AdminDashboard() {
                 const profitVal = balanceVal - initVal;
                 const profitPercent = initVal > 0 ? (profitVal / initVal) * 100 : 0;
 
-                // Các chỉ số phụ trợ từ EA
                 const drawdown = acc.drawdown || '0.00%';
                 const profitDay = Number(acc.profit_today || 0);
                 const profitWeek = Number(acc.profit_week || 0);
@@ -365,67 +363,67 @@ export default function AdminDashboard() {
                 return (
                   <div key={acc.id} className="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl space-y-5">
                     
-                    {/* HÀNG ĐẦU MỖI CARD: THÔNG TIN TÀI KHOẢN & TRẠNG THÁI */}
+                    {/* HÀNG ĐẦU MỖI CARD */}
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-800 pb-4">
                       <div className="flex items-center gap-3">
                         <span className="text-xs bg-blue-900/60 text-blue-400 border border-blue-700/50 px-2.5 py-1 rounded-lg font-bold">
-                          {acc.platform || 'MT5'}[cite: 5, 8]
+                          {acc.platform || 'MT5'}
                         </span>
                         <div>
                           <div className="text-xl font-mono font-bold text-white flex items-center gap-2">
-                            {acc.account_number}[cite: 5, 8]
-                            <span className="text-xs font-normal text-gray-400 font-sans">(Pass: {acc.account_pass})[cite: 8]</span>
+                            {acc.account_number}
+                            <span className="text-xs font-normal text-gray-400 font-sans">(Pass: {acc.account_pass})</span>
                           </div>
                           <div className="text-xs text-gray-400 mt-0.5">
-                            Sàn: <span className="text-white">{acc.server_broker || 'N/A'}</span> | Khách: <span className="text-blue-400">{acc.user_email}</span>[cite: 8]
+                            Sàn: <span className="text-white">{acc.server_broker || 'N/A'}</span> | Khách: <span className="text-blue-400">{acc.user_email}</span>
                           </div>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
                         <span className="text-xs bg-gray-950 border border-gray-800 px-3 py-1.5 rounded-xl text-purple-400 font-semibold">
-                          Bot: {acc.bot_name || acc.custom_notes || 'Standard EA'}[cite: 5, 8]
+                          Bot: {acc.bot_name || acc.custom_notes || 'Standard EA'}
                         </span>
                         <span className={`inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl border ${
                           acc.bot_status === 'Running' ? 'bg-green-950/60 text-green-400 border-green-800' : 'bg-yellow-950/60 text-yellow-400 border-yellow-800'
                         }`}>
                           <span className={`w-2 h-2 rounded-full ${acc.bot_status === 'Running' ? 'bg-green-400 animate-pulse' : 'bg-yellow-400'}`}></span>
-                          {acc.bot_status || 'Pending'}[cite: 7]
+                          {acc.bot_status || 'Pending'}
                         </span>
                         <button
                           onClick={() => handleDelete(acc.id)}
                           className="bg-red-600/80 hover:bg-red-600 text-white px-3 py-1.5 rounded-xl text-xs font-semibold transition"
                           title="Xóa tài khoản"
                         >
-                          Xóa[cite: 8]
+                          Xóa
                         </button>
                       </div>
                     </div>
 
-                    {/* HÀNG CÁC Ô CHỈ SỐ: ĐỦ 12 TRƯỜNG THÔNG TIN */}
+                    {/* 12 Ô CHỈ SỐ THÔNG TIN */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 text-sm">
                       <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
-                        <div className="text-xs text-gray-400">1. Vốn ban đầu[cite: 5, 8]</div>
-                        <div className="font-mono font-bold text-white mt-1 text-base">${initVal.toLocaleString()}[cite: 5, 8]</div>
+                        <div className="text-xs text-gray-400">1. Vốn ban đầu</div>
+                        <div className="font-mono font-bold text-white mt-1 text-base">${initVal.toLocaleString()}</div>
                       </div>
 
                       <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
-                        <div className="text-xs text-gray-400">2. Balance (Số dư)[cite: 5, 8]</div>
-                        <div className="font-mono font-bold text-white mt-1 text-base">${balanceVal.toLocaleString()}[cite: 5, 8]</div>
+                        <div className="text-xs text-gray-400">2. Balance (Số dư)</div>
+                        <div className="font-mono font-bold text-white mt-1 text-base">${balanceVal.toLocaleString()}</div>
                       </div>
 
                       <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
-                        <div className="text-xs text-gray-400">3. Equity hiện tại[cite: 5, 8]</div>
-                        <div className="font-mono font-bold text-blue-400 mt-1 text-base">${equityVal.toLocaleString()}[cite: 5, 8]</div>
+                        <div className="text-xs text-gray-400">3. Equity hiện tại</div>
+                        <div className="font-mono font-bold text-blue-400 mt-1 text-base">${equityVal.toLocaleString()}</div>
                       </div>
 
                       <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
-                        <div className="text-xs text-gray-400">4. Drawdown (Sụt giảm)[cite: 5, 8]</div>
-                        <div className="font-mono font-bold text-red-400 mt-1 text-base">{drawdown}[cite: 5, 8]</div>
+                        <div className="text-xs text-gray-400">4. Drawdown (Sụt giảm)</div>
+                        <div className="font-mono font-bold text-red-400 mt-1 text-base">{drawdown}</div>
                       </div>
 
                       <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
-                        <div className="text-xs text-gray-400">5. P/L Hôm nay[cite: 5]</div>
+                        <div className="text-xs text-gray-400">5. P/L Hôm nay</div>
                         <div className={`font-mono font-bold mt-1 text-base ${profitDay >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                           {profitDay >= 0 ? '+' : ''}${profitDay.toLocaleString()}
                         </div>
@@ -439,40 +437,40 @@ export default function AdminDashboard() {
                       </div>
 
                       <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
-                        <div className="text-xs text-gray-400">7. P/L Tháng này[cite: 5]</div>
+                        <div className="text-xs text-gray-400">7. P/L Tháng này</div>
                         <div className={`font-mono font-bold mt-1 text-base ${profitMonth >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                           {profitMonth >= 0 ? '+' : ''}${profitMonth.toLocaleString()}
                         </div>
                       </div>
 
                       <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
-                        <div className="text-xs text-gray-400">8. P/L Tổng lợi nhuận[cite: 5, 8]</div>
+                        <div className="text-xs text-gray-400">8. P/L Tổng lợi nhuận</div>
                         <div className={`font-mono font-bold mt-1 text-base ${profitVal >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                          {profitVal >= 0 ? '+' : ''}${profitVal.toLocaleString()} ({profitPercent.toFixed(2)}%)[cite: 5, 8]
+                          {profitVal >= 0 ? '+' : ''}${profitVal.toLocaleString()} ({profitPercent.toFixed(2)}%)
                         </div>
                       </div>
 
                       <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
-                        <div className="text-xs text-gray-400">9. Tổng số lệnh đã thực hiện[cite: 8]</div>
-                        <div className="font-mono font-bold text-white mt-1 text-base">{totalTrades} lệnh[cite: 8]</div>
+                        <div className="text-xs text-gray-400">9. Tổng lệnh đã thực hiện</div>
+                        <div className="font-mono font-bold text-white mt-1 text-base">{totalTrades} lệnh</div>
                       </div>
 
                       <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
-                        <div className="text-xs text-gray-400">10. Số lệnh Buy / Sell[cite: 8]</div>
+                        <div className="text-xs text-gray-400">10. Số lệnh Buy / Sell</div>
                         <div className="font-mono font-bold mt-1 text-sm flex gap-2">
-                          <span className="text-blue-400">Buy: {buyTrades}[cite: 8]</span>
+                          <span className="text-blue-400">Buy: {buyTrades}</span>
                           <span className="text-gray-500">/</span>
-                          <span className="text-red-400">Sell: {sellTrades}[cite: 8]</span>
+                          <span className="text-red-400">Sell: {sellTrades}</span>
                         </div>
                       </div>
 
                       <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
-                        <div className="text-xs text-gray-400">11. Tổng Lot đã thực hiện[cite: 8]</div>
-                        <div className="font-mono font-bold text-yellow-400 mt-1 text-base">{totalLots.toFixed(2)} Lot[cite: 8]</div>
+                        <div className="text-xs text-gray-400">11. Tổng Lot đã thực hiện</div>
+                        <div className="font-mono font-bold text-yellow-400 mt-1 text-base">{totalLots.toFixed(2)} Lot</div>
                       </div>
 
                       <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
-                        <div className="text-xs text-gray-400">12. Số lệnh đang mở[cite: 5]</div>
+                        <div className="text-xs text-gray-400">12. Số lệnh đang mở</div>
                         <div className="font-mono font-bold text-purple-400 mt-1 text-base">{openOrders} lệnh</div>
                       </div>
                     </div>
@@ -486,21 +484,21 @@ export default function AdminDashboard() {
           {/* PHÂN TRANG */}
           {totalPages > 1 && (
             <div className="flex justify-between items-center pt-4 bg-gray-900 border border-gray-800 rounded-2xl p-4 shadow-xl">
-              <span className="text-xs text-gray-400">Trang {currentPage} / {totalPages}[cite: 7, 8]</span>
+              <span className="text-xs text-gray-400">Trang {currentPage} / {totalPages}</span>
               <div className="space-x-2">
                 <button
                   onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
                   disabled={currentPage === 1}
                   className="px-4 py-2 bg-gray-950 border border-gray-800 rounded-xl text-xs font-semibold hover:bg-gray-800 disabled:opacity-50 transition"
                 >
-                  Trang trước[cite: 7, 8]
+                  Trang trước
                 </button>
                 <button
                   onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
                   disabled={currentPage === totalPages}
                   className="px-4 py-2 bg-gray-950 border border-gray-800 rounded-xl text-xs font-semibold hover:bg-gray-800 disabled:opacity-50 transition"
                 >
-                  Trang sau[cite: 7, 8]
+                  Trang sau
                 </button>
               </div>
             </div>
