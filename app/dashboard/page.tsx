@@ -12,6 +12,10 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
 
+  // Trạng thái quản lý đăng nhập email cho khách hàng / admin
+  const [clientEmail, setClientEmail] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   // Form thêm thủ công
   const [accountNumber, setAccountNumber] = useState('');
   const [accountPass, setAccountPass] = useState('');
@@ -24,7 +28,7 @@ export default function AdminDashboard() {
   // Tìm kiếm & Phân trang
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const rowsPerPage = 3; // Hiển thị 3 card mỗi trang để bố cục 12 ô thoáng và đẹp mắt
+  const rowsPerPage = 3;
 
   async function fetchAccounts() {
     setLoading(true);
@@ -42,8 +46,29 @@ export default function AdminDashboard() {
   }
 
   useEffect(() => {
+    const savedEmail = localStorage.getItem('client_email');
+    if (savedEmail) {
+      setClientEmail(savedEmail);
+      setIsLoggedIn(true);
+    }
     fetchAccounts();
   }, []);
+
+  function handleLogin(e: React.FormEvent) {
+    e.preventDefault();
+    if (!clientEmail.trim()) {
+      alert('Vui lòng nhập email!');
+      return;
+    }
+    localStorage.setItem('client_email', clientEmail.trim());
+    setIsLoggedIn(true);
+  }
+
+  function handleLogout() {
+    setIsLoggedIn(false);
+    setClientEmail('');
+    localStorage.removeItem('client_email');
+  }
 
   async function handleAddAccount(e: React.FormEvent) {
     e.preventDefault();
@@ -108,15 +133,19 @@ export default function AdminDashboard() {
     return sum + (curr - init);
   }, 0);
 
-  // Lọc tìm kiếm
+  // Lọc tìm kiếm theo email đã đăng nhập (hoặc tìm kiếm chung)
   const filteredAccounts = accounts.filter((acc) => {
     const searchLower = searchTerm.toLowerCase();
-    return (
+    const matchSearch = (
       acc.account_number?.toLowerCase().includes(searchLower) ||
       acc.user_email?.toLowerCase().includes(searchLower) ||
       acc.server_broker?.toLowerCase().includes(searchLower) ||
       acc.custom_notes?.toLowerCase().includes(searchLower)
     );
+    if (isLoggedIn) {
+      return matchSearch && acc.user_email?.toLowerCase() === clientEmail.toLowerCase();
+    }
+    return matchSearch;
   });
 
   const indexOfLastRow = currentPage * rowsPerPage;
@@ -128,16 +157,31 @@ export default function AdminDashboard() {
     <main className="min-h-screen bg-gray-950 text-gray-100 p-6 md:p-10">
       <div className="max-w-7xl mx-auto space-y-8">
         
-        {/* TIÊU ĐỀ */}
+        {/* TIÊU ĐỀ & NÚT THOÁT */}
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 flex flex-col md:flex-row justify-between items-center gap-4 shadow-xl">
           <div>
             <h1 className="text-2xl font-bold text-white">⚙️ Quản trị Tổng thể & Investor Dashboard</h1>
             <p className="text-sm text-gray-400 mt-1">Hệ thống đồng bộ dữ liệu Real-time từ VPS & MetaTrader</p>
           </div>
-          <div className="flex gap-3">
-            <a href="/portal" target="_blank" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition shadow-lg shadow-blue-600/20">
-              🔗 Mở Cổng Khách Hàng (Portal)
-            </a>
+          
+          <div className="flex items-center gap-3">
+            {isLoggedIn ? (
+              <div className="flex items-center gap-3">
+                <div className="text-sm bg-blue-900/40 text-blue-400 border border-blue-700/50 px-4 py-2 rounded-xl">
+                  Đang xem: <span className="font-semibold text-white">{clientEmail}</span>
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition shadow"
+                >
+                  🚪 Thoát
+                </button>
+              </div>
+            ) : (
+              <a href="/portal" target="_blank" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl text-sm font-semibold transition shadow-lg shadow-blue-600/20">
+                🔗 Mở Cổng Khách Hàng (Portal)
+              </a>
+            )}
           </div>
         </div>
 
@@ -299,7 +343,7 @@ export default function AdminDashboard() {
                 const drawdown = acc.drawdown || '0.00%';
                 const profitDay = Number(acc.profit_today || 0);
                 const profitWeek = Number(acc.profit_week || 0);
-                const profitMonth = Number(acc.profit_month || balanceVal); // Mặc định tháng nếu chưa có
+                const profitMonth = Number(acc.profit_month || balanceVal);
                 const openOrders = acc.open_orders || acc.total_trades || 0;
                 const totalTrades = acc.total_trades || 0;
                 const buyTrades = acc.buy_trades || 0;
@@ -348,32 +392,26 @@ export default function AdminDashboard() {
 
                     {/* HÀNG CÁC Ô CHỈ SỐ: ĐỦ 12 TRƯỜNG THÔNG TIN */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 text-sm">
-                      
-                      {/* 1. Vốn ban đầu */}
                       <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
                         <div className="text-xs text-gray-400">1. Vốn ban đầu</div>
                         <div className="font-mono font-bold text-white mt-1 text-base">${initVal.toLocaleString()}</div>
                       </div>
 
-                      {/* 2. Balance (Số dư) */}
                       <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
                         <div className="text-xs text-gray-400">2. Balance (Số dư)</div>
                         <div className="font-mono font-bold text-white mt-1 text-base">${balanceVal.toLocaleString()}</div>
                       </div>
 
-                      {/* 3. Equity hiện tại */}
                       <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
                         <div className="text-xs text-gray-400">3. Equity hiện tại</div>
                         <div className="font-mono font-bold text-blue-400 mt-1 text-base">${equityVal.toLocaleString()}</div>
                       </div>
 
-                      {/* 4. Drawdown (Sụt giảm) */}
                       <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
                         <div className="text-xs text-gray-400">4. Drawdown (Sụt giảm)</div>
                         <div className="font-mono font-bold text-red-400 mt-1 text-base">{drawdown}</div>
                       </div>
 
-                      {/* 5. P/L Hôm nay */}
                       <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
                         <div className="text-xs text-gray-400">5. P/L Hôm nay</div>
                         <div className={`font-mono font-bold mt-1 text-base ${profitDay >= 0 ? 'text-green-400' : 'text-red-400'}`}>
@@ -381,7 +419,6 @@ export default function AdminDashboard() {
                         </div>
                       </div>
 
-                      {/* 6. P/L Tuần này */}
                       <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
                         <div className="text-xs text-gray-400">6. P/L Tuần này</div>
                         <div className={`font-mono font-bold mt-1 text-base ${profitWeek >= 0 ? 'text-green-400' : 'text-red-400'}`}>
@@ -389,7 +426,6 @@ export default function AdminDashboard() {
                         </div>
                       </div>
 
-                      {/* 7. P/L Tháng này */}
                       <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
                         <div className="text-xs text-gray-400">7. P/L Tháng này</div>
                         <div className={`font-mono font-bold mt-1 text-base ${profitMonth >= 0 ? 'text-green-400' : 'text-red-400'}`}>
@@ -397,7 +433,6 @@ export default function AdminDashboard() {
                         </div>
                       </div>
 
-                      {/* 8. P/L Tổng lợi nhuận */}
                       <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
                         <div className="text-xs text-gray-400">8. P/L Tổng lợi nhuận</div>
                         <div className={`font-mono font-bold mt-1 text-base ${profitVal >= 0 ? 'text-green-400' : 'text-red-400'}`}>
@@ -405,13 +440,11 @@ export default function AdminDashboard() {
                         </div>
                       </div>
 
-                      {/* 9. Tổng số lệnh đã thực hiện */}
                       <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
                         <div className="text-xs text-gray-400">9. Tổng lệnh đã thực hiện</div>
                         <div className="font-mono font-bold text-white mt-1 text-base">{totalTrades} lệnh</div>
                       </div>
 
-                      {/* 10. Số lệnh Buy / Sell */}
                       <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
                         <div className="text-xs text-gray-400">10. Số lệnh Buy / Sell</div>
                         <div className="font-mono font-bold mt-1 text-sm flex gap-2">
@@ -421,18 +454,15 @@ export default function AdminDashboard() {
                         </div>
                       </div>
 
-                      {/* 11. Tổng Lot đã thực hiện */}
                       <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
                         <div className="text-xs text-gray-400">11. Tổng Lot thực hiện</div>
                         <div className="font-mono font-bold text-yellow-400 mt-1 text-base">{totalLots.toFixed(2)} Lot</div>
                       </div>
 
-                      {/* 12. Số lệnh đang mở */}
                       <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
                         <div className="text-xs text-gray-400">12. Số lệnh đang mở</div>
                         <div className="font-mono font-bold text-purple-400 mt-1 text-base">{openOrders} lệnh</div>
                       </div>
-
                     </div>
 
                   </div>
