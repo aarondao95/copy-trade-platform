@@ -24,7 +24,7 @@ export default function AdminDashboard() {
   // Tìm kiếm & Phân trang
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const rowsPerPage = 4; // Hiển thị 4 card mỗi trang cho gọn gàng
+  const rowsPerPage = 3; // Hiển thị 3 card mỗi trang để bố cục 12 ô thoáng và đẹp mắt
 
   async function fetchAccounts() {
     setLoading(true);
@@ -258,10 +258,10 @@ export default function AdminDashboard() {
           </form>
         </div>
 
-        {/* DANH SÁCH HIỆU SUẤT TỪNG TÀI KHOẢN (DẠNG CARD INVESTOR DASHBOARD) */}
+        {/* DANH SÁCH HIỆU SUẤT TỪNG TÀI KHOẢN (12 TRƯỜNG THÔNG TIN ĐẦY ĐỦ) */}
         <div className="space-y-6">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl">
-            <h2 className="text-lg font-bold text-white">📊 Hiệu suất Chi tiết Từng Tài khoản (Investor Cards)</h2>
+            <h2 className="text-lg font-bold text-white">📊 Hiệu suất Chi tiết Từng Tài khoản (12 Trường Chỉ Số)</h2>
             <div className="w-full md:w-80">
               <input
                 type="text"
@@ -295,12 +295,16 @@ export default function AdminDashboard() {
                 const profitVal = balanceVal - initVal;
                 const profitPercent = initVal > 0 ? (profitVal / initVal) * 100 : 0;
 
-                // Các thông số lệnh mới từ EA
+                // Các chỉ số phụ trợ từ EA
+                const drawdown = acc.drawdown || '0.00%';
+                const profitDay = Number(acc.profit_today || 0);
+                const profitWeek = Number(acc.profit_week || 0);
+                const profitMonth = Number(acc.profit_month || balanceVal); // Mặc định tháng nếu chưa có
+                const openOrders = acc.open_orders || acc.total_trades || 0;
                 const totalTrades = acc.total_trades || 0;
                 const buyTrades = acc.buy_trades || 0;
                 const sellTrades = acc.sell_trades || 0;
                 const totalLots = Number(acc.total_lots || 0);
-                const drawdown = acc.drawdown || '0.00%';
 
                 return (
                   <div key={acc.id} className="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl space-y-5">
@@ -342,44 +346,74 @@ export default function AdminDashboard() {
                       </div>
                     </div>
 
-                    {/* HÀNG CÁC Ô CHỈ SỐ TÀI CHÍNH & HIỆU SUẤT (INVESTOR GRID) */}
+                    {/* HÀNG CÁC Ô CHỈ SỐ: ĐỦ 12 TRƯỜNG THÔNG TIN */}
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 text-sm">
                       
+                      {/* 1. Vốn ban đầu */}
                       <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
-                        <div className="text-xs text-gray-400">Vốn ban đầu</div>
+                        <div className="text-xs text-gray-400">1. Vốn ban đầu</div>
                         <div className="font-mono font-bold text-white mt-1 text-base">${initVal.toLocaleString()}</div>
                       </div>
 
+                      {/* 2. Balance (Số dư) */}
                       <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
-                        <div className="text-xs text-gray-400">Balance (Số dư)</div>
+                        <div className="text-xs text-gray-400">2. Balance (Số dư)</div>
                         <div className="font-mono font-bold text-white mt-1 text-base">${balanceVal.toLocaleString()}</div>
                       </div>
 
+                      {/* 3. Equity hiện tại */}
                       <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
-                        <div className="text-xs text-gray-400">Equity hiện tại</div>
+                        <div className="text-xs text-gray-400">3. Equity hiện tại</div>
                         <div className="font-mono font-bold text-blue-400 mt-1 text-base">${equityVal.toLocaleString()}</div>
                       </div>
 
+                      {/* 4. Drawdown (Sụt giảm) */}
                       <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
-                        <div className="text-xs text-gray-400">Drawdown (Sụt giảm)</div>
+                        <div className="text-xs text-gray-400">4. Drawdown (Sụt giảm)</div>
                         <div className="font-mono font-bold text-red-400 mt-1 text-base">{drawdown}</div>
                       </div>
 
+                      {/* 5. P/L Hôm nay */}
                       <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
-                        <div className="text-xs text-gray-400">P/L Tổng lợi nhuận</div>
+                        <div className="text-xs text-gray-400">5. P/L Hôm nay</div>
+                        <div className={`font-mono font-bold mt-1 text-base ${profitDay >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          {profitDay >= 0 ? '+' : ''}${profitDay.toLocaleString()}
+                        </div>
+                      </div>
+
+                      {/* 6. P/L Tuần này */}
+                      <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
+                        <div className="text-xs text-gray-400">6. P/L Tuần này</div>
+                        <div className={`font-mono font-bold mt-1 text-base ${profitWeek >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          {profitWeek >= 0 ? '+' : ''}${profitWeek.toLocaleString()}
+                        </div>
+                      </div>
+
+                      {/* 7. P/L Tháng này */}
+                      <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
+                        <div className="text-xs text-gray-400">7. P/L Tháng này</div>
+                        <div className={`font-mono font-bold mt-1 text-base ${profitMonth >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          {profitMonth >= 0 ? '+' : ''}${profitMonth.toLocaleString()}
+                        </div>
+                      </div>
+
+                      {/* 8. P/L Tổng lợi nhuận */}
+                      <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
+                        <div className="text-xs text-gray-400">8. P/L Tổng lợi nhuận</div>
                         <div className={`font-mono font-bold mt-1 text-base ${profitVal >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                           {profitVal >= 0 ? '+' : ''}${profitVal.toLocaleString()} ({profitPercent.toFixed(2)}%)
                         </div>
                       </div>
 
-                      {/* CÁC Ô THÔNG TIN MỚI THEO YÊU CẦU */}
+                      {/* 9. Tổng số lệnh đã thực hiện */}
                       <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
-                        <div className="text-xs text-gray-400">Tổng số lệnh đã thực hiện</div>
+                        <div className="text-xs text-gray-400">9. Tổng lệnh đã thực hiện</div>
                         <div className="font-mono font-bold text-white mt-1 text-base">{totalTrades} lệnh</div>
                       </div>
 
+                      {/* 10. Số lệnh Buy / Sell */}
                       <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
-                        <div className="text-xs text-gray-400">Số lệnh Buy / Sell</div>
+                        <div className="text-xs text-gray-400">10. Số lệnh Buy / Sell</div>
                         <div className="font-mono font-bold mt-1 text-sm flex gap-2">
                           <span className="text-blue-400">Buy: {buyTrades}</span>
                           <span className="text-gray-500">/</span>
@@ -387,9 +421,16 @@ export default function AdminDashboard() {
                         </div>
                       </div>
 
+                      {/* 11. Tổng Lot đã thực hiện */}
                       <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
-                        <div className="text-xs text-gray-400">Tổng Lot đã thực hiện</div>
+                        <div className="text-xs text-gray-400">11. Tổng Lot thực hiện</div>
                         <div className="font-mono font-bold text-yellow-400 mt-1 text-base">{totalLots.toFixed(2)} Lot</div>
+                      </div>
+
+                      {/* 12. Số lệnh đang mở */}
+                      <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
+                        <div className="text-xs text-gray-400">12. Số lệnh đang mở</div>
+                        <div className="font-mono font-bold text-purple-400 mt-1 text-base">{openOrders} lệnh</div>
                       </div>
 
                     </div>
