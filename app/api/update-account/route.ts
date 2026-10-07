@@ -8,7 +8,6 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 export async function POST(request: Request) {
   try {
-    // 1. Đọc dữ liệu JSON từ EA gửi lên
     const body = await request.json();
     console.log("📥 Dữ liệu từ EA gửi lên:", body);
 
@@ -29,12 +28,11 @@ export async function POST(request: Request) {
       bot_status 
     } = body;
 
-    // Kiểm tra nếu không có ID tài khoản thì báo lỗi
     if (!account_number) {
       return NextResponse.json({ error: 'Thiếu account_number' }, { status: 400 });
     }
 
-    // 2. Cập nhật dữ liệu vào Supabase dựa trên account_number
+    // Cập nhật dữ liệu (ĐÃ XÓA updated_at ĐỂ TRÁNH LỖI 500)
     const { data, error } = await supabase
       .from('trading_accounts')
       .update({
@@ -44,32 +42,32 @@ export async function POST(request: Request) {
         profit_week: Number(profit_week || 0),
         profit_month: Number(profit_month || 0),
         profit_total: Number(profit_total || 0),
-        drawdown: drawdown || '0.00%',
+        drawdown: String(drawdown || '0.00%'),
         total_trades: Number(total_trades || 0),
         buy_trades: Number(buy_trades || 0),
         sell_trades: Number(sell_trades || 0),
         total_lots: Number(total_lots || 0),
         open_orders: Number(open_orders || 0),
-        bot_status: bot_status || 'Running',
-        updated_at: new Date().toISOString() // Lưu vết thời gian cập nhật
+        bot_status: String(bot_status || 'Running')
       })
-      .eq('account_number', account_number.toString()); // Khớp đúng số tài khoản MT4/MT5
+      .eq('account_number', account_number.toString())
+      .select();
 
     if (error) {
-      console.error("❌ Lỗi Supabase:", error.message);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    // 3. Trả về HTTP 200 (Thành công) cho EA
-    return NextResponse.json({ success: true, message: 'Đã cập nhật 12 trường thông tin' }, { status: 200 });
+    if (!data || data.length === 0) {
+      return NextResponse.json({ error: 'Tài khoản không tồn tại trong DB' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, message: 'Đã cập nhật thành công' }, { status: 200 });
 
   } catch (error: any) {
-    console.error("❌ Lỗi Server:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
-// Chặn phương thức GET (Nếu EA gọi nhầm hoặc ai đó test bằng trình duyệt)
 export async function GET() {
   return NextResponse.json({ error: 'Chỉ chấp nhận phương thức POST' }, { status: 405 });
 }
