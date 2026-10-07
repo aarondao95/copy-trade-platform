@@ -26,10 +26,14 @@ export default function AdminDashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 5;
 
-  // Lấy dữ liệu từ Supabase
+  // Lấy dữ liệu từ Supabase (Đã sắp xếp theo id giảm dần để nhận diện khóa chính chuẩn)
   async function fetchAccounts() {
     setLoading(true);
-    const { data, error } = await supabase.from('trading_accounts').select('*');
+    const { data, error } = await supabase
+      .from('trading_accounts')
+      .select('*')
+      .order('id', { ascending: false });
+
     if (error) {
       setErrorMessage(error.message);
     } else {
@@ -58,7 +62,7 @@ export default function AdminDashboard() {
         user_email: userEmail,
         server_broker: serverBroker,
         balance: parseFloat(balance),
-        custom_notes: customNotes, // Lưu vào đúng cột custom_notes
+        custom_notes: customNotes,
       },
     ]);
 
@@ -76,7 +80,7 @@ export default function AdminDashboard() {
     setSubmitting(false);
   }
 
-  // 2. Xóa tài khoản
+  // 2. Xóa tài khoản dựa trên ID khóa chính
   async function handleDelete(id: any) {
     if (!confirm('Bạn có chắc chắn muốn xóa tài khoản này không?')) return;
 
