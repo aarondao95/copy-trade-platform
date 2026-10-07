@@ -12,7 +12,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Quản lý email tra cứu & trạng thái đăng nhập
+  // Quản lý email tra cứu & trạng thái đăng nhập (KHÔNG DÙNG LOCALSTORAGE)
   const [clientEmail, setClientEmail] = useState('');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -46,11 +46,7 @@ export default function AdminDashboard() {
   }
 
   useEffect(() => {
-    const savedEmail = localStorage.getItem('client_email');
-    if (savedEmail) {
-      setClientEmail(savedEmail);
-      setIsLoggedIn(true);
-    }
+    // Chỉ fetch data ban đầu, không tự động đăng nhập email cũ nữa
     fetchAccounts();
   }, []);
 
@@ -60,16 +56,15 @@ export default function AdminDashboard() {
       alert('Vui lòng nhập email tra cứu!');
       return;
     }
-    localStorage.setItem('client_email', clientEmail.trim());
+    // Chỉ bật cờ đăng nhập tạm thời, F5 là mất
     setIsLoggedIn(true);
     setCurrentPage(1);
   }
 
   function handleLogout(e: React.MouseEvent) {
-    e.preventDefault(); // Ngăn chặn reload trang khi bấm nút
+    e.preventDefault();
     setIsLoggedIn(false);
     setClientEmail('');
-    localStorage.removeItem('client_email');
     setCurrentPage(1);
   }
 
@@ -465,7 +460,7 @@ export default function AdminDashboard() {
                       </div>
 
                       <div className="bg-gray-950 border border-gray-800/80 p-4 rounded-xl">
-                        <div className="text-xs text-gray-400">11. Tổng Lot đã thực hiện</div>
+                        <div className="text-xs text-gray-400">11. Tổng Lot thực hiện</div>
                         <div className="font-mono font-bold text-yellow-400 mt-1 text-base">{totalLots.toFixed(2)} Lot</div>
                       </div>
 
