@@ -26,7 +26,7 @@ export default function AdminDashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 5;
 
-  // Lấy dữ liệu từ Supabase (Đã sắp xếp theo id giảm dần để nhận diện khóa chính chuẩn)
+  // Lấy dữ liệu từ Supabase (Sắp xếp theo id giảm dần)
   async function fetchAccounts() {
     setLoading(true);
     const { data, error } = await supabase
@@ -248,7 +248,7 @@ export default function AdminDashboard() {
                   <th className="p-3">Pass</th>
                   <th className="p-3">Email</th>
                   <th className="p-3">Server broker</th>
-                  <th className="p-3">Yêu cầu setup</th>
+                  <th className="p-3">Yêu cầu setup</th> {/* Cột ghi chú của khách */}
                   <th className="p-3 text-right">Số dư</th>
                   <th className="p-3 text-center">Hành động</th>
                 </tr>
@@ -269,9 +269,12 @@ export default function AdminDashboard() {
                       <td className="p-3 font-mono text-gray-600">{acc.account_pass}</td>
                       <td className="p-3 text-gray-800">{acc.user_email}</td>
                       <td className="p-3 font-medium text-gray-700">{acc.server_broker}</td>
+                      
+                      {/* Ô hiển thị ghi chú/yêu cầu setup của khách */}
                       <td className="p-3 font-medium text-purple-600">
                         {acc.custom_notes && acc.custom_notes.trim() !== '' ? acc.custom_notes : <span className="text-gray-400 font-normal">—</span>}
                       </td>
+
                       <td className="p-3 text-right font-bold text-green-600">
                         ${Number(acc.balance || 0).toLocaleString()}
                       </td>
