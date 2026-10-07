@@ -7,219 +7,387 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-export default function ClientDashboard() {
-  const [emailInput, setEmailInput] = useState('');
-  const [clientData, setClientData] = useState<any[]>([]);
-  const [searched, setSearched] = useState(false);
-  const [loading, setLoading] = useState(false);
+export default function AdminDashboard() {
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  // Hàm lấy dữ liệu từ Supabase theo Email của khách
-  async function fetchClientData(email: string) {
-    if (!email) return;
+  // Các trường thông tin form thêm mới
+  const [accountNumber, setAccountNumber] = useState('');
+  const [accountPass, setAccountPass] = useState('');
+  const [userEmail, setUserEmail] = useState('');
+  const [serverBroker, setServerBroker] = useState('');
+  const [balance, setBalance] = useState('');
+  const [customNotes, setCustomNotes] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  // Tìm kiếm & Phân trang
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const rowsPerPage = 5;
+
+  async function fetchAccounts() {
+    setLoading(true);
     const { data, error } = await supabase
       .from('trading_accounts')
       .select('*')
-      .ilike('user_email', email.trim());
+      .order('id', { ascending: false });
 
-    if (!error && data) {
-      setClientData(data);
+    if (error) {
+      setErrorMessage(error.message);
+    } else {
+      setAccounts(data || []);
     }
-  }
-
-  // Khi khách bấm xem Dashboard
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
-    if (!emailInput) {
-      alert('Vui lòng nhập Email của bạn!');
-      return;
-    }
-
-    setLoading(true);
-    await fetchClientData(emailInput);
-    setSearched(true);
     setLoading(false);
   }
 
-  // TÍNH NĂNG REAL-TIME: Tự động gọi lại dữ liệu ngầm mỗi 5 giây một lần khi khách đã đăng nhập
   useEffect(() => {
-    if (!searched || !emailInput) return;
+    fetchAccounts();
+  }, []);
 
-    const interval = setInterval(() => {
-      fetchClientData(emailInput);
-    }, 5000); // Cứ 5 giây đồng bộ số liệu mới từ DB lên màn hình một lần
+  async function handleAddAccount(e: React.FormEvent) {
+    e.preventDefault();
+    if (!accountNumber || !accountPass || !userEmail || !serverBroker || !balance) {
+      alert('Vui lòng điền đầy đủ tất cả thông tin!');
+      return;
+    }
 
-    return () => clearInterval(interval);
-  }, [searched, emailInput]);
+    setSubmitting(true);
+    const { error } = await supabase.from('trading_accounts').insert([
+      {
+        account_number: accountNumber,
+        account_pass: accountPass,
+        user_email: userEmail,
+        server_broker: serverBroker,
+        balance: parseFloat(balance),
+        custom_notes: customNotes,
+        bot_status: 'Pending', // Mặc định là chờ cài VPS
+      },
+    ]);
+
+    if (error) {
+      alert('Lỗi khi thêm: ' + error.message);
+    } else {
+      setAccountNumber('');
+      setAccountPass('');
+      setUserEmail('');
+      setServerBroker('');
+      setBalance('');
+      setCustomNotes('');
+      fetchAccounts();
+    }
+    setSubmitting(false);
+  }
+
+  async function handleDelete(id: any) {
+    if (!confirm('Bạn có chắc chắn muốn xóa tài khoản này không?')) return;
+
+    const { error } = await supabase.from('trading_accounts').delete().eq('id', id);
+    if (error) {
+      alert('Lỗi khi xóa: ' + error.message);
+    } else {
+      fetchAccounts();
+    }
+  }
+
+  // --- THỐNG KÊ TỔNG QUAN HỆ THỐNG ---
+  const totalAccountsCount = accounts.length;
+  const runningAccountsCount = accounts.filter(acc => acc.bot_status === 'Running').length;
+  const pendingAccountsCount = accounts.filter(acc => acc.bot_status === 'Pending' || !acc.bot_status).length;
+  
+  const totalCapitalRunning = accounts
+    .filter(acc => acc.bot_status === 'Running')
+    .reduce((sum, acc) => sum + Number(acc.balance || acc.initial_balance || 0), 0);
+
+  const totalSystemProfit = accounts.reduce((sum, acc) => {
+    const init = Number(acc.initial_balance || acc.balance || 0);
+    const curr = Number(acc.balance || 0);
+    return sum + (curr - init);
+  }, 0);
+
+  // Lọc dữ liệu tìm kiếm
+  const filteredAccounts = accounts.filter((acc) => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      acc.account_number?.toLowerCase().includes(searchLower) ||
+      acc.user_email?.toLowerCase().includes(searchLower) ||
+      acc.server_broker?.toLowerCase().includes(searchLower) ||
+      acc.custom_notes?.toLowerCase().includes(searchLower)
+    );
+  });
+
+  const indexOfLastRow = currentPage * rowsPerPage;
+  const indexOfFirstRow = indexOfLastRow - rowsPerPage;
+  const currentAccounts = filteredAccounts.slice(indexOfFirstRow, indexOfLastRow);
+  const totalPages = Math.ceil(filteredAccounts.length / rowsPerPage);
 
   return (
-    <main className="min-h-screen bg-gray-900 text-gray-100 p-6 md:p-10">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <main className="min-h-screen bg-gray-950 text-gray-100 p-6 md:p-10">
+      <div className="max-w-7xl mx-auto space-y-8">
         
-        {/* HEADER */}
-        <div className="flex flex-col md:flex-row justify-between items-center bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-700 gap-4">
+        {/* TIÊU ĐỀ */}
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 flex flex-col md:flex-row justify-between items-center gap-4 shadow-xl">
           <div>
-            <h1 className="text-2xl font-bold text-white">Investor Dashboard - Theo dõi Hiệu suất</h1>
-            <p className="text-sm text-gray-400 mt-1">Hệ thống đồng bộ dữ liệu Real-time từ VPS & MetaTrader</p>
+            <h1 className="text-2xl font-bold text-white">⚙️ Trung tâm Quản trị Tổng thể Hệ thống Copy-Trade</h1>
+            <p className="text-sm text-gray-400 mt-1">Giám sát VPS, trạng thái Bot và hiệu suất giao dịch toàn hệ thống</p>
+          </div>
+          <div className="flex gap-2">
+            <a href="/portal" target="_blank" className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-semibold transition">
+              🔗 Mở Cổng Khách Hàng (Portal)
+            </a>
+          </div>
+        </div>
+
+        {/* 📊 BẢNG QUẢN LÝ TỔNG THỂ CHUNG (OVERVIEW STATS) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-lg">
+            <div className="text-xs text-gray-400 font-medium">Tổng số ACC đang chạy</div>
+            <div className="text-2xl font-bold font-mono text-green-400 mt-2 flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span>
+              {runningAccountsCount} <span className="text-xs text-gray-500 font-normal">/ {totalAccountsCount} acc</span>
+            </div>
           </div>
 
-          {/* Form đăng nhập nhanh bằng Email */}
-          <form onSubmit={handleLogin} className="flex gap-2 w-full md:w-auto">
-            <input
-              type="email"
-              placeholder="Nhập email của bạn..."
-              value={emailInput}
-              onChange={(e) => setEmailInput(e.target.value)}
-              className="bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-sm text-white focus:outline-none focus:border-blue-500 w-full md:w-64"
-            />
-            <button
-              type="submit"
-              disabled={loading}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg text-sm font-semibold transition whitespace-nowrap"
-            >
-              {loading ? 'Đang tải...' : 'Xem Dashboard'}
-            </button>
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-lg">
+            <div className="text-xs text-gray-400 font-medium">Số ACC chờ chạy trên VPS</div>
+            <div className="text-2xl font-bold font-mono text-yellow-400 mt-2 flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-yellow-500"></span>
+              {pendingAccountsCount} <span className="text-xs text-gray-500 font-normal">acc</span>
+            </div>
+          </div>
+
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-lg">
+            <div className="text-xs text-gray-400 font-medium">Tổng vốn ACC đang chạy</div>
+            <div className="text-2xl font-bold font-mono text-white mt-2">
+              ${totalCapitalRunning.toLocaleString()}
+            </div>
+          </div>
+
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-lg">
+            <div className="text-xs text-gray-400 font-medium">Tổng lợi nhuận toàn hệ thống</div>
+            <div className={`text-2xl font-bold font-mono mt-2 ${totalSystemProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              {totalSystemProfit >= 0 ? '+' : ''}${totalSystemProfit.toLocaleString()}
+            </div>
+          </div>
+
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 shadow-lg">
+            <div className="text-xs text-gray-400 font-medium">Trạng thái hạ tầng VPS</div>
+            <div className="text-lg font-bold font-mono text-blue-400 mt-2 flex items-center gap-1.5">
+              🟢 Stable (Online)
+            </div>
+          </div>
+        </div>
+
+        {/* FORM THÊM TÀI KHOẢN THỦ CÔNG */}
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl space-y-4">
+          <h2 className="text-lg font-bold text-white border-b border-gray-800 pb-3">➕ Thêm tài khoản thủ công lên hệ thống</h2>
+          <form onSubmit={handleAddAccount} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">Tài khoản (ID MT4/MT5)</label>
+              <input
+                type="text"
+                placeholder="Ví dụ: 88392011"
+                value={accountNumber}
+                onChange={(e) => setAccountNumber(e.target.value)}
+                className="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-sm text-white outline-none focus:border-blue-500 font-mono"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">Pass (Mật khẩu giao dịch)</label>
+              <input
+                type="text"
+                placeholder="Mật khẩu tài khoản"
+                value={accountPass}
+                onChange={(e) => setAccountPass(e.target.value)}
+                className="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-sm text-white outline-none focus:border-blue-500 font-mono"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">Email khách hàng</label>
+              <input
+                type="email"
+                placeholder="khachhang@gmail.com"
+                value={userEmail}
+                onChange={(e) => setUserEmail(e.target.value)}
+                className="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-sm text-white outline-none focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">Server broker (Sàn)</label>
+              <input
+                type="text"
+                placeholder="Ví dụ: Exness-Real15"
+                value={serverBroker}
+                onChange={(e) => setServerBroker(e.target.value)}
+                className="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-sm text-white outline-none focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">Vốn / Số dư ban đầu ($)</label>
+              <input
+                type="number"
+                step="0.01"
+                placeholder="1000"
+                value={balance}
+                onChange={(e) => setBalance(e.target.value)}
+                className="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-sm text-white outline-none focus:border-blue-500 font-mono text-green-400 font-bold"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-400 mb-1">Yêu cầu setup (Custom Notes)</label>
+              <input
+                type="text"
+                placeholder="Ví dụ: DCA 15 giá..."
+                value={customNotes}
+                onChange={(e) => setCustomNotes(e.target.value)}
+                className="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-sm text-white outline-none focus:border-blue-500"
+              />
+            </div>
+            <div className="md:col-span-3">
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-xl transition duration-200 shadow-lg shadow-blue-600/20"
+              >
+                {submitting ? 'Đang thêm...' : 'Lưu tài khoản lên hệ thống'}
+              </button>
+            </div>
           </form>
         </div>
 
-        {/* NẾU CHƯA TÌM KIẾM HOẶC KHÔNG CÓ DỮ LIỆU */}
-        {!searched ? (
-          <div className="bg-gray-800 border border-gray-700 rounded-2xl p-12 text-center text-gray-400">
-            <p className="text-lg">Vui lòng nhập Email đăng ký tài khoản ở góc trên để xem thông tin chi tiết.</p>
+        {/* DANH SÁCH CHI TIẾT TỪNG TÀI KHOẢN & HIỆU SUẤT */}
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl space-y-4">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4 border-b border-gray-800 pb-4">
+            <h2 className="text-lg font-bold text-white">📋 Danh sách chi tiết tài khoản & Hiệu suất thực tế</h2>
+            <div className="w-full md:w-80">
+              <input
+                type="text"
+                placeholder="🔍 Tìm kiếm tài khoản, email, ghi chú..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-blue-500"
+              />
+            </div>
           </div>
-        ) : clientData.length === 0 ? (
-          <div className="bg-gray-800 border border-gray-700 rounded-2xl p-12 text-center text-gray-400">
-            <p className="text-lg text-red-400">Không tìm thấy tài khoản nào gắn với email: <span className="font-semibold text-white">{emailInput}</span></p>
+
+          {errorMessage && (
+            <div className="bg-red-950 border border-red-700 text-red-300 px-4 py-3 rounded-xl text-sm">
+              Lỗi: {errorMessage}
+            </div>
+          )}
+
+          <div className="border border-gray-800 rounded-xl overflow-x-auto">
+            <table className="w-full text-left border-collapse text-sm">
+              <thead className="bg-gray-950 text-gray-400 border-b border-gray-800">
+                <tr>
+                  <th className="p-3.5">Tài khoản (ID)</th>
+                  <th className="p-3.5">Pass</th>
+                  <th className="p-3.5">Email / Sàn</th>
+                  <th className="p-3.5">Yêu cầu setup</th>
+                  <th className="p-3.5 text-center">Trạng thái Bot</th>
+                  <th className="p-3.5 text-right">Lệnh (Buy / Sell / Tổng)</th>
+                  <th className="p-3.5 text-right">Tổng Lot</th>
+                  <th className="p-3.5 text-right">Số dư / Lợi nhuận</th>
+                  <th className="p-3.5 text-center">Hành động</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-800 text-gray-300">
+                {loading ? (
+                  <tr>
+                    <td colSpan={9} className="p-8 text-center text-gray-500">Đang tải dữ liệu hệ thống...</td>
+                  </tr>
+                ) : currentAccounts.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="p-8 text-center text-gray-500">Chưa có dữ liệu tài khoản nào trong hệ thống.</td>
+                  </tr>
+                ) : (
+                  currentAccounts.map((acc: any) => {
+                    const balanceVal = Number(acc.balance || 0);
+                    const initVal = Number(acc.initial_balance || balanceVal);
+                    const profitVal = balanceVal - initVal;
+
+                    // Các thông số lệnh mới từ EA đẩy lên (nếu có)
+                    const totalTrades = acc.total_trades || 0;
+                    const buyTrades = acc.buy_trades || 0;
+                    const sellTrades = acc.sell_trades || 0;
+                    const totalLots = acc.total_lots || 0;
+
+                    return (
+                      <tr key={acc.id} className="hover:bg-gray-950/60 transition">
+                        <td className="p-3.5 font-mono font-bold text-blue-400">{acc.account_number}</td>
+                        <td className="p-3.5 font-mono text-gray-400">{acc.account_pass}</td>
+                        <td className="p-3.5">
+                          <div className="text-white">{acc.user_email}</div>
+                          <div className="text-xs text-gray-500">{acc.server_broker}</div>
+                        </td>
+                        <td className="p-3.5 font-medium text-purple-400 max-w-xs truncate">
+                          {acc.custom_notes ? acc.custom_notes : <span className="text-gray-600">—</span>}
+                        </td>
+                        <td className="p-3.5 text-center">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border ${
+                            acc.bot_status === 'Running' ? 'bg-green-950/60 text-green-400 border-green-800' :
+                            acc.bot_status === 'Stopped' ? 'bg-yellow-950/60 text-yellow-400 border-yellow-800' :
+                            'bg-blue-950/60 text-blue-400 border-blue-800'
+                          }`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${acc.bot_status === 'Running' ? 'bg-green-400 animate-pulse' : 'bg-blue-400'}`}></span>
+                            {acc.bot_status || 'Pending'}
+                          </span>
+                        </td>
+                        <td className="p-3.5 text-right font-mono text-xs">
+                          <span className="text-blue-400">B: {buyTrades}</span> / <span className="text-red-400">S: {sellTrades}</span> <br/>
+                          <span className="text-gray-400 font-bold">Tổng: {totalTrades}</span>
+                        </td>
+                        <td className="p-3.5 text-right font-mono font-bold text-yellow-400">
+                          {Number(totalLots).toFixed(2)} Lot
+                        </td>
+                        <td className="p-3.5 text-right font-mono">
+                          <div className="font-bold text-white">${balanceVal.toLocaleString()}</div>
+                          <div className={`text-xs ${profitVal >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            {profitVal >= 0 ? '+' : ''}${profitVal.toLocaleString()}
+                          </div>
+                        </td>
+                        <td className="p-3.5 text-center">
+                          <button
+                            onClick={() => handleDelete(acc.id)}
+                            className="bg-red-600/80 hover:bg-red-600 text-white px-3 py-1 rounded-lg text-xs transition font-semibold"
+                          >
+                            Xóa
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
-        ) : (
-          /* DANH SÁCH CÁC TÀI KHOẢN CỦA KHÁCH HÀNG */
-          <div className="space-y-8">
-            {clientData.map((acc: any) => {
-              const initial = Number(acc.initial_balance || acc.balance || 0);
-              const currentBalance = Number(acc.balance || 0);
-              const totalProfit = currentBalance - initial;
-              const totalProfitPercent = initial > 0 ? (totalProfit / initial) * 100 : 0;
 
-              return (
-                <div key={acc.id} className="bg-gray-800 border border-gray-700 rounded-2xl p-6 shadow-xl space-y-6">
-                  
-                  {/* THÔNG TIN TÀI KHOẢN & TRẠNG THÁI BOT */}
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-700 pb-4 gap-4">
-                    <div>
-                      <div className="text-xs text-gray-400 uppercase tracking-wider">Tài khoản giao dịch</div>
-                      <div className="text-2xl font-mono font-bold text-blue-400 flex items-center gap-3 mt-1">
-                        <span className="bg-blue-950 border border-blue-800 text-xs px-2 py-0.5 rounded text-blue-300">
-                          {acc.platform || 'MT5'}
-                        </span>
-                        {acc.account_number}
-                        <span className="text-xs bg-gray-700 text-gray-300 px-2.5 py-1 rounded-md font-sans">
-                          Sàn: {acc.broker || 'N/A'} ({acc.server_broker || 'N/A'})
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-3">
-                      {/* Bot đang sử dụng */}
-                      <div className="bg-gray-900 border border-gray-700 px-3 py-1.5 rounded-lg text-sm">
-                        <span className="text-gray-400 text-xs block">Bot sử dụng:</span>
-                        <span className="font-semibold text-purple-400">{acc.bot_name || 'Standard EA'}</span>
-                      </div>
-
-                      {/* Trạng thái Bot */}
-                      <div className="bg-gray-900 border border-gray-700 px-4 py-1.5 rounded-lg text-sm flex items-center gap-2">
-                        <span className="text-gray-400 text-xs">Trạng thái:</span>
-                        <span className={`inline-flex items-center gap-1.5 font-bold ${
-                          acc.bot_status === 'Running' ? 'text-green-400' :
-                          acc.bot_status === 'Stopped' ? 'text-yellow-400' : 'text-red-400'
-                        }`}>
-                          <span className={`w-2.5 h-2.5 rounded-full animate-pulse ${
-                            acc.bot_status === 'Running' ? 'bg-green-500' :
-                            acc.bot_status === 'Stopped' ? 'bg-yellow-500' : 'bg-red-500'
-                          }`}></span>
-                          {acc.bot_status || 'Running'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* CÁC CHỈ SỐ TÀI CHÍNH (GRID CARDS) */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    
-                    {/* Vốn ban đầu */}
-                    <div className="bg-gray-900/60 border border-gray-700/60 p-4 rounded-xl">
-                      <div className="text-xs text-gray-400">Vốn ban đầu</div>
-                      <div className="text-xl font-bold font-mono text-gray-200 mt-1">
-                        ${Number(acc.initial_balance || acc.balance || 0).toLocaleString()}
-                      </div>
-                    </div>
-
-                    {/* Balance */}
-                    <div className="bg-gray-900/60 border border-gray-700/60 p-4 rounded-xl">
-                      <div className="text-xs text-gray-400">Balance (Số dư)</div>
-                      <div className="text-xl font-bold font-mono text-white mt-1">
-                        ${Number(acc.balance || 0).toLocaleString()}
-                      </div>
-                    </div>
-
-                    {/* Equity */}
-                    <div className="bg-gray-900/60 border border-gray-700/60 p-4 rounded-xl">
-                      <div className="text-xs text-gray-400">Equity hiện tại</div>
-                      <div className="text-xl font-bold font-mono text-blue-400 mt-1">
-                        ${Number(acc.equity || acc.balance || 0).toLocaleString()}
-                      </div>
-                    </div>
-
-                    {/* Drawdown */}
-                    <div className="bg-gray-900/60 border border-gray-700/60 p-4 rounded-xl">
-                      <div className="text-xs text-gray-400">Drawdown (Sụt giảm)</div>
-                      <div className="text-xl font-bold font-mono text-red-400 mt-1">
-                        {acc.drawdown ? `${acc.drawdown}%` : '0.00%'}
-                      </div>
-                    </div>
-
-                  </div>
-
-                  {/* LÃI LỖ (P/L) & SỐ LỆNH */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    
-                    {/* P/L hôm nay */}
-                    <div className="bg-gray-900/40 border border-gray-700/40 p-4 rounded-xl">
-                      <div className="text-xs text-gray-400">P/L Hôm nay</div>
-                      <div className={`text-lg font-bold font-mono mt-1 ${Number(acc.profit_today || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                        {Number(acc.profit_today || 0) >= 0 ? '+' : ''}${Number(acc.profit_today || 0).toLocaleString()}
-                      </div>
-                    </div>
-
-                    {/* P/L tháng */}
-                    <div className="bg-gray-900/40 border border-gray-700/40 p-4 rounded-xl">
-                      <div className="text-xs text-gray-400">P/L Tháng này</div>
-                      <div className={`text-lg font-bold font-mono mt-1 ${Number(acc.profit_month || 0) >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                        {Number(acc.profit_month || 0) >= 0 ? '+' : ''}${Number(acc.profit_month || 0).toLocaleString()}
-                      </div>
-                    </div>
-
-                    {/* P/L tổng */}
-                    <div className="bg-gray-900/40 border border-gray-700/40 p-4 rounded-xl">
-                      <div className="text-xs text-gray-400">P/L Tổng lợi nhuận</div>
-                      <div className={`text-lg font-bold font-mono mt-1 ${totalProfit >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                        {totalProfit >= 0 ? '+' : ''}${totalProfit.toLocaleString()} ({totalProfitPercent.toFixed(2)}%)
-                      </div>
-                    </div>
-
-                    {/* Số lệnh */}
-                    <div className="bg-gray-900/40 border border-gray-700/40 p-4 rounded-xl">
-                      <div className="text-xs text-gray-400">Tổng số lệnh đang mở</div>
-                      <div className="text-lg font-bold font-mono text-yellow-400 mt-1">
-                        {acc.total_orders || 0} lệnh
-                      </div>
-                    </div>
-
-                  </div>
-
-                </div>
-              );
-            })}
-          </div>
-        )}
+          {/* PHÂN TRANG */}
+          {totalPages > 1 && (
+            <div className="flex justify-between items-center pt-2">
+              <span className="text-xs text-gray-400">Trang {currentPage} / {totalPages}</span>
+              <div className="space-x-1">
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="px-3 py-1 bg-gray-950 border border-gray-800 rounded-lg text-xs hover:bg-gray-800 disabled:opacity-50"
+                >
+                  Trang trước
+                </button>
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="px-3 py-1 bg-gray-950 border border-gray-800 rounded-lg text-xs hover:bg-gray-800 disabled:opacity-50"
+                >
+                  Trang sau
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
       </div>
     </main>
