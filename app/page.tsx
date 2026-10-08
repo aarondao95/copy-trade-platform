@@ -1,277 +1,537 @@
+'use client';
+
 import Link from 'next/link';
+import { useState, useEffect } from 'react';
 
 export default function LandingPage() {
-  const zaloLink = "https://zalo.me/g/t3mp48v01wxyk6fcvx0d"; 
+  const zaloLink = "https://zalo.me/g/t3mp48v01wxyk6fcvx0d";
+  const portalLink = "https://eahelper-admin.vercel.app/portal";
+  const dashboardLink = "/dashboard";
+
+  // State cho Navbar & FAQ
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
+
+  // Xử lý hiệu ứng Sticky Navbar
+  useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const faqs = [
+    { q: "Tôi không biết cài EA thì sao?", a: "EA HELPER hỗ trợ phần setup theo quy trình của hệ thống. Bạn chỉ cần cung cấp tài khoản." },
+    { q: "Tôi chỉ chạy 1 tài khoản có được không?", a: "Có. Chúng tôi hỗ trợ cả những nhà đầu tư cá nhân chạy từ 1 tài khoản với vốn nhỏ." },
+    { q: "Tôi có cần tự quản lý VPS không?", a: "Nếu sử dụng hạ tầng của EA HELPER, bạn không cần tự thuê hay quản lý VPS. Chúng tôi lo toàn bộ hạ tầng 24/7." },
+    { q: "Tôi có thể theo dõi EA ở đâu?", a: "Tất cả thông số lợi nhuận, drawdown, số lệnh sẽ được cập nhật real-time trên Dashboard cá nhân của bạn." },
+    { q: "EA HELPER có đảm bảo lợi nhuận không?", a: "Không. EA HELPER là nền tảng quản lý hạ tầng. Lợi nhuận phụ thuộc vào cấu hình EA và thị trường." },
+  ];
 
   return (
-    <main className="min-h-screen bg-gray-950 text-gray-100 font-sans selection:bg-blue-500/30 overflow-hidden">
+    <main className="min-h-screen bg-[#0B0F19] text-gray-300 font-sans selection:bg-blue-500/30 overflow-x-hidden relative">
       
-      {/* NAVBAR */}
-      <nav className="border-b border-gray-800 bg-gray-900/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="font-black text-2xl tracking-tighter text-white">
-            EA <span className="text-blue-500">HELPER</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="text-sm font-semibold text-gray-300 hover:text-white transition">
-              Tra cứu hiệu suất
+      {/* BACKGROUND GLOWS (Style Vercel/Linear) */}
+      <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-blue-600/10 blur-[120px] rounded-full pointer-events-none z-0"></div>
+      
+      {/* 1. SECTION: NAVBAR */}
+      <nav className={`fixed top-0 w-full z-50 transition-all duration-300 border-b ${isScrolled ? 'bg-[#0B0F19]/80 backdrop-blur-lg border-white/10 py-3' : 'bg-transparent border-transparent py-5'}`}>
+        <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
+          <div className="flex items-center gap-8">
+            <Link href="/" className="font-black text-2xl tracking-tighter text-white flex items-center gap-2 z-50">
+              EA<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">HELPER</span>
             </Link>
-            <a href={zaloLink} target="_blank" rel="noopener noreferrer" className="hidden sm:inline-block bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-2 rounded-lg transition shadow-lg shadow-blue-600/20">
-              Vào Group Zalo
-            </a>
+            <div className="hidden md:flex items-center gap-6 text-sm font-medium text-gray-400">
+              <a href="#features" className="hover:text-white transition">Tính năng</a>
+              <a href="#how-it-works" className="hover:text-white transition">Cách hoạt động</a>
+              <a href="#pricing" className="hover:text-white transition">Bảng giá</a>
+              <a href="#faq" className="hover:text-white transition">FAQ</a>
+            </div>
           </div>
+          
+          {/* Desktop Actions */}
+          <div className="hidden md:flex items-center gap-4">
+            <Link href={dashboardLink} className="text-sm font-semibold text-gray-300 hover:text-white transition">
+              Đăng nhập Dashboard
+            </Link>
+            <Link href={portalLink} className="bg-white hover:bg-gray-100 text-[#0B0F19] text-sm font-bold px-5 py-2.5 rounded-lg transition shadow-[0_0_20px_rgba(255,255,255,0.1)]">
+              Bắt đầu ngay
+            </Link>
+          </div>
+
+          {/* Mobile Hamburger */}
+          <button className="md:hidden text-white z-50" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={mobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"}></path></svg>
+          </button>
         </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden absolute top-0 left-0 w-full h-screen bg-[#0B0F19] flex flex-col items-center justify-center gap-6 text-lg font-medium z-40 border-b border-white/10">
+            <Link href={portalLink} className="bg-blue-600 text-white px-8 py-3 rounded-xl w-[80%] text-center font-bold">🚀 Đăng ký tài khoản</Link>
+            <Link href={dashboardLink} className="w-[80%] text-center py-3 border border-gray-700 rounded-xl">Đăng nhập Dashboard</Link>
+            <a href="#features" onClick={() => setMobileMenuOpen(false)}>Tính năng</a>
+            <a href="#pricing" onClick={() => setMobileMenuOpen(false)}>Bảng giá</a>
+            <a href={zaloLink} target="_blank" className="text-blue-400">Hỗ trợ Zalo</a>
+          </div>
+        )}
       </nav>
 
-      {/* HERO SECTION */}
-      <section className="max-w-5xl mx-auto px-6 py-20 md:py-28 text-center relative">
-        {/* Background Glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-600/20 rounded-full blur-[120px] -z-10"></div>
-        
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-900/30 border border-blue-800/50 text-blue-400 text-sm font-medium mb-8">
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500"></span>
-          </span>
-          Hệ thống đang mở cho anh em trải nghiệm
+      {/* 2. HERO SECTION */}
+      <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 px-6 max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-12 z-10">
+        <div className="lg:w-1/2 space-y-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold uppercase tracking-wider">
+            <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span> Nền tảng quản lý EA hiện đại
+          </div>
+          <h1 className="text-5xl md:text-7xl font-black text-white leading-[1.1] tracking-tight">
+            CHẠY EA. <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-400 to-teal-400">KHÔNG CẦN LO PHẦN KỸ THUẬT.</span>
+          </h1>
+          <p className="text-lg md:text-xl text-gray-400 leading-relaxed max-w-xl">
+            EA HELPER giúp bạn triển khai và quản lý EA Trading đơn giản hơn — từ setup tài khoản, hạ tầng VPS đến theo dõi trạng thái Real-time trên Dashboard.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            <Link href={portalLink} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white text-lg font-bold px-8 py-4 rounded-xl transition shadow-lg shadow-blue-900/50 text-center">
+              🚀 Bắt đầu với EA HELPER
+            </Link>
+            <Link href={dashboardLink} className="w-full sm:w-auto bg-transparent border border-gray-700 hover:bg-white/5 text-white text-lg font-bold px-8 py-4 rounded-xl transition text-center">
+              Xem Dashboard Demo
+            </Link>
+          </div>
+          <p className="text-sm text-gray-500">Dành cho nhà đầu tư cá nhân đang sử dụng EA trên MT4/MT5.</p>
         </div>
         
-        <h1 className="text-5xl md:text-7xl font-black text-white leading-[1.1] mb-6 tracking-tight">
-          Muốn Chạy EA Nhưng <br className="hidden md:block" />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500">Ngại Kỹ Thuật?</span>
-        </h1>
-        
-        <p className="text-lg md:text-xl text-gray-400 mb-10 max-w-2xl mx-auto leading-relaxed">
-          Nền tảng sinh ra để biến việc vận hành Bot giao dịch trở nên đơn giản. Bạn chỉ cần đưa yêu cầu – EA HELPER sẽ lo toàn bộ khâu setup, hạ tầng VPS và quản lý kỹ thuật từ A-Z.
-        </p>
-        
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <a href={zaloLink} target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white text-lg font-bold px-8 py-4 rounded-xl transition shadow-lg shadow-blue-600/30">
-            🚀 Inbox Đăng Ký Ngay
-          </a>
-          <Link href="/dashboard" className="w-full sm:w-auto bg-gray-900 border border-gray-700 hover:bg-gray-800 text-white text-lg font-bold px-8 py-4 rounded-xl transition">
-            📊 Xem Dashboard Mẫu
-          </Link>
-        </div>
-
-        {/* THỐNG KÊ NHANH (TRUST METRICS) */}
-        <div className="mt-16 pt-8 border-t border-gray-800/50 flex flex-wrap justify-center gap-8 md:gap-16">
-          <div className="text-center">
-            <div className="text-4xl font-black text-white">300+</div>
-            <div className="text-sm text-gray-500 font-medium mt-1">Tài khoản đang chạy</div>
-          </div>
-          <div className="text-center">
-            <div className="text-4xl font-black text-white">24/7</div>
-            <div className="text-sm text-gray-500 font-medium mt-1">Giám sát VPS</div>
-          </div>
-          <div className="text-center">
-            <div className="text-4xl font-black text-white">0</div>
-            <div className="text-sm text-gray-500 font-medium mt-1">Yêu cầu kỹ thuật</div>
+        {/* Mockup Dashboard SaaS */}
+        <div className="lg:w-1/2 w-full perspective-1000">
+          <div className="bg-[#131B2C] border border-white/10 rounded-2xl p-6 shadow-2xl shadow-blue-900/20 rotate-y-[-5deg] rotate-x-[5deg] transform-gpu hover:rotate-0 transition-transform duration-700">
+            <div className="flex items-center justify-between border-b border-white/5 pb-4 mb-4">
+              <div className="text-white font-bold flex items-center gap-2">
+                <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
+                Performance
+              </div>
+              <div className="flex gap-2">
+                <span className="flex items-center gap-1.5 text-xs font-semibold px-2 py-1 bg-green-500/10 text-green-400 border border-green-500/20 rounded-md">
+                   VPS: ONLINE
+                </span>
+                <span className="flex items-center gap-1.5 text-xs font-semibold px-2 py-1 bg-green-500/10 text-green-400 border border-green-500/20 rounded-md">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span> EA: ONLINE
+                </span>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="bg-white/5 border border-white/5 rounded-xl p-4">
+                <div className="text-xs text-gray-500 mb-1">Balance</div>
+                <div className="text-2xl font-bold font-mono text-white">$10,325.50</div>
+              </div>
+              <div className="bg-white/5 border border-white/5 rounded-xl p-4">
+                <div className="text-xs text-gray-500 mb-1">Equity</div>
+                <div className="text-2xl font-bold font-mono text-cyan-400">$10,284.20</div>
+              </div>
+              <div className="bg-white/5 border border-white/5 rounded-xl p-4">
+                <div className="text-xs text-gray-500 mb-1">P/L Today</div>
+                <div className="text-xl font-bold font-mono text-green-400">+$32.50</div>
+              </div>
+              <div className="bg-white/5 border border-white/5 rounded-xl p-4">
+                <div className="text-xs text-gray-500 mb-1">Drawdown</div>
+                <div className="text-xl font-bold font-mono text-red-400">2.15%</div>
+              </div>
+            </div>
+            <div className="bg-white/5 border border-white/5 rounded-xl p-4 flex justify-between items-center">
+               <div className="text-sm text-gray-400">Current Strategy:</div>
+               <div className="text-sm font-semibold text-white">Gold EA V2.1 (DCA)</div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* NỖI ĐAU (THE PROBLEM) */}
-      <section className="bg-gray-900/50 border-y border-gray-800 py-20">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Vì sao anh em có EA ngon <br className="sm:hidden" /> nhưng mãi chưa dám chạy?</h2>
-            <p className="text-gray-400 text-lg">Rào cản lớn nhất không phải là không có Bot, mà là những câu hỏi đau đầu:</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 max-w-5xl mx-auto">
+      {/* 3. PAIN POINT SECTION */}
+      <section className="py-24 bg-[#0F1423] border-y border-white/5">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-16">Bạn muốn chạy EA nhưng <span className="text-blue-400">ngại phần kỹ thuật?</span></h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              'Thuê và cấu hình VPS ở đâu cho mượt?', 
-              'Cài đặt phần mềm MT5 trên máy chủ thế nào?', 
-              'EA bỏ vào thư mục nào mới đúng chuẩn?', 
-              'Set thông số (Parameters) ra sao để không lỗi?', 
-              'Kết nối tài khoản giao dịch như thế nào?', 
-              '“Cài kiểu gì đây?” 😅'
-            ].map((item, i) => (
-              <div key={i} className="bg-gray-950 border border-gray-800 p-6 rounded-2xl flex items-start gap-4 hover:border-gray-700 transition">
-                <div className="text-red-400 text-xl mt-0.5">❌</div>
-                <div className="text-gray-300 font-medium leading-relaxed">{item}</div>
+              { t: "VPS", d: "Không muốn tự thuê, bảo mật và quản lý máy chủ VPS phức tạp." },
+              { t: "MT5", d: "Không rành cài đặt, tối ưu hóa và cấu hình nền tảng MT5." },
+              { t: "EA Setup", d: "Không biết set Input, thông số rủi ro sao cho EA không bị lỗi." },
+              { t: "Monitoring", d: "Không muốn cắm mặt vào màn hình 24/7 để kiểm tra hệ thống." }
+            ].map((p, i) => (
+              <div key={i} className="bg-[#131B2C] border border-white/5 p-6 rounded-2xl text-left hover:border-white/20 transition">
+                <div className="w-10 h-10 rounded-lg bg-red-500/10 flex items-center justify-center text-red-400 font-bold mb-4">✕</div>
+                <h3 className="text-lg font-bold text-white mb-2">{p.t}</h3>
+                <p className="text-sm text-gray-400">{p.d}</p>
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* GIẢI PHÁP (THE SOLUTION) */}
-      <section className="py-24 max-w-6xl mx-auto px-6">
-        <div className="flex flex-col lg:flex-row items-center gap-16">
-          <div className="lg:w-1/2 space-y-6">
-            <div className="inline-block px-3 py-1 bg-blue-900/40 text-blue-400 rounded-lg text-sm font-bold">GIẢI PHÁP TOÀN DIỆN</div>
-            <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight">
-              EA HELPER – Nền tảng <br />
-              <span className="text-blue-500">"Zero Kỹ Thuật"</span> dành cho bạn
-            </h2>
-            <p className="text-gray-400 text-lg leading-relaxed">
-              Chúng tôi mang đến một nền tảng quản lý dành riêng cho những nhà đầu tư muốn tận dụng sức mạnh của Auto-Trading mà không cần phải tự mày mò.
-            </p>
-            <ul className="space-y-5 pt-4">
-              <li className="flex items-start gap-4 text-gray-300">
-                <span className="w-7 h-7 rounded-full bg-green-900/30 text-green-400 flex items-center justify-center font-bold shrink-0 mt-0.5">✓</span>
-                <div><span className="text-white font-bold">Không rành cài đặt?</span> Đội ngũ hệ thống hỗ trợ setup chuẩn 100%.</div>
-              </li>
-              <li className="flex items-start gap-4 text-gray-300">
-                <span className="w-7 h-7 rounded-full bg-green-900/30 text-green-400 flex items-center justify-center font-bold shrink-0 mt-0.5">✓</span>
-                <div><span className="text-white font-bold">Tối ưu chi phí:</span> Không cần tự thuê hay duy trì máy chủ VPS đắt đỏ, phức tạp.</div>
-              </li>
-              <li className="flex items-start gap-4 text-gray-300">
-                <span className="w-7 h-7 rounded-full bg-green-900/30 text-green-400 flex items-center justify-center font-bold shrink-0 mt-0.5">✓</span>
-                <div><span className="text-white font-bold">Vốn nhỏ vẫn chạy:</span> Chạy 1-2 tài khoản hệ thống vẫn hỗ trợ nhiệt tình.</div>
-              </li>
-              <li className="flex items-start gap-4 text-gray-300">
-                <span className="w-7 h-7 rounded-full bg-green-900/30 text-green-400 flex items-center justify-center font-bold shrink-0 mt-0.5">✓</span>
-                <div><span className="text-white font-bold">Kiểm soát hoàn toàn:</span> Xem P/L, Drawdown qua Client Dashboard ở bất cứ đâu.</div>
-              </li>
-            </ul>
-          </div>
-          
-          <div className="lg:w-1/2 w-full">
-            <div className="bg-gradient-to-tr from-blue-900/20 to-purple-900/20 border border-gray-800 p-6 md:p-8 rounded-3xl shadow-2xl relative">
-              <div className="absolute -top-4 -right-4 w-24 h-24 bg-blue-500/20 blur-2xl rounded-full"></div>
-              <div className="bg-gray-950 border border-gray-800 rounded-2xl p-6 space-y-4 shadow-xl">
-                <div className="flex items-center justify-between border-b border-gray-800 pb-4">
-                  <div className="text-white font-bold flex items-center gap-2">
-                    <span className="text-xl">📊</span> Client Dashboard
-                  </div>
-                  <div className="text-green-400 text-xs font-mono flex items-center gap-2 px-2 py-1 bg-green-900/20 rounded-md border border-green-800/50">
-                    <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span> Đồng bộ MT5
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-gray-900 p-4 rounded-xl border border-gray-800">
-                    <div className="text-xs text-gray-500">Lợi nhuận tuần này</div>
-                    <div className="text-xl font-bold text-green-400 mt-1">+$325.50</div>
-                  </div>
-                  <div className="bg-gray-900 p-4 rounded-xl border border-gray-800">
-                    <div className="text-xs text-gray-500">Drawdown cao nhất</div>
-                    <div className="text-xl font-bold text-red-400 mt-1">2.15%</div>
-                  </div>
-                  <div className="bg-gray-900 p-4 rounded-xl border border-gray-800">
-                    <div className="text-xs text-gray-500">Lệnh đang mở</div>
-                    <div className="text-xl font-bold text-purple-400 mt-1">4 lệnh</div>
-                  </div>
-                  <div className="bg-gray-900 p-4 rounded-xl border border-gray-800">
-                    <div className="text-xs text-gray-500">Tổng Lot</div>
-                    <div className="text-xl font-bold text-yellow-400 mt-1">12.50</div>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div className="mt-16 text-xl font-medium text-gray-300">
+            👉 <span className="text-white font-bold">EA HELPER</span> được xây dựng để đơn giản hóa tất cả những phần này.
           </div>
         </div>
       </section>
 
-      {/* HOW IT WORKS */}
-      <section className="bg-gray-900/50 border-y border-gray-800 py-24">
-        <div className="max-w-6xl mx-auto px-6 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-16">3 Bước Đơn Giản Để Bắt Đầu</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-8">
-            <div className="bg-gray-950 border border-gray-800 p-8 rounded-3xl relative hover:border-blue-500/50 transition duration-300">
-              <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-600/30">1</div>
-              <h3 className="text-xl font-bold text-white mt-6 mb-3">Cung Cấp Thông Tin</h3>
-              <p className="text-gray-400 text-sm leading-relaxed">Gửi thông tin tài khoản MT5 và yêu cầu chiến thuật (VD: DCA 15 giá, rủi ro thấp...) qua hệ thống tiếp nhận của chúng tôi.</p>
-            </div>
-            <div className="bg-gray-950 border border-gray-800 p-8 rounded-3xl relative hover:border-blue-500/50 transition duration-300">
-              <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-600/30">2</div>
-              <h3 className="text-xl font-bold text-white mt-6 mb-3">Hệ Thống Setup</h3>
-              <p className="text-gray-400 text-sm leading-relaxed">EA HELPER tiếp nhận, cấu hình máy chủ VPS tốc độ cao, cài đặt và khởi chạy Bot theo đúng thông số đã thỏa thuận.</p>
-            </div>
-            <div className="bg-gray-950 border border-gray-800 p-8 rounded-3xl relative hover:border-blue-500/50 transition duration-300">
-              <div className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-600/30">3</div>
-              <h3 className="text-xl font-bold text-white mt-6 mb-3">Theo Dõi Lợi Nhuận</h3>
-              <p className="text-gray-400 text-sm leading-relaxed">Bạn được cấp link Dashboard. Chỉ cần nhập Email để xem 12 thông số hiệu suất cập nhật Real-time từ VPS.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* TESTIMONIALS (ĐÁNH GIÁ TỪ KHÁCH HÀNG) */}
+      {/* 4. TARGET USER */}
       <section className="py-24 max-w-7xl mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Đánh giá từ anh em cộng đồng</h2>
-          <p className="text-gray-400 text-lg">Hơn 300+ tài khoản đang được vận hành mượt mà mỗi ngày.</p>
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">EA HELPER dành cho ai?</h2>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {/* Card 1 */}
-          <div className="bg-gray-900 border border-gray-800 p-6 rounded-2xl">
-            <div className="flex text-yellow-400 text-sm mb-4">★★★★★</div>
-            <p className="text-gray-300 text-sm italic mb-6 leading-relaxed">"Trước đây tự thuê VPS cài mãi không xong, mua EA về vứt xó. Giờ giao hết cho EA Helper, mỗi ngày chỉ việc mở web lên xem lãi. Quá nhàn!"</p>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-rose-500 rounded-full flex items-center justify-center text-white font-bold">L</div>
-              <div>
-                <div className="text-white font-bold text-sm">Chị Linh</div>
-                <div className="text-xs text-gray-500">Khách hàng chạy 3 tài khoản</div>
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-gradient-to-br from-[#131B2C] to-[#0B0F19] border border-white/5 p-8 rounded-2xl flex gap-6 items-start">
+            <div className="w-12 h-12 shrink-0 rounded-full bg-blue-500/10 flex items-center justify-center text-2xl">👤</div>
+            <div>
+              <h3 className="text-xl font-bold text-white mb-2">Chạy ít tài khoản</h3>
+              <p className="text-gray-400">Phù hợp với nhà đầu tư cá nhân chỉ chạy 1–5 tài khoản, không muốn mua VPS đắt đỏ.</p>
             </div>
           </div>
-
-          {/* Card 2 */}
-          <div className="bg-gray-900 border border-gray-800 p-6 rounded-2xl">
-            <div className="flex text-yellow-400 text-sm mb-4">★★★★★</div>
-            <p className="text-gray-300 text-sm italic mb-6 leading-relaxed">"Mình vốn nhỏ chỉ 500$ nhưng anh em support vẫn rất nhiệt tình. Tuyệt vời nhất là cái bảng Dashboard xem profit real-time trên điện thoại, rất chuyên nghiệp."</p>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-full flex items-center justify-center text-white font-bold">U</div>
-              <div>
-                <div className="text-white font-bold text-sm">Bạn Uyên</div>
-                <div className="text-xs text-gray-500">Nhà đầu tư cá nhân</div>
-              </div>
+          <div className="bg-gradient-to-br from-[#131B2C] to-[#0B0F19] border border-white/5 p-8 rounded-2xl flex gap-6 items-start">
+            <div className="w-12 h-12 shrink-0 rounded-full bg-blue-500/10 flex items-center justify-center text-2xl">⚡</div>
+            <div>
+              <h3 className="text-xl font-bold text-white mb-2">Không rành kỹ thuật</h3>
+              <p className="text-gray-400">Không muốn mất thời gian học quản trị VPS, MT5 và cài đặt EA.</p>
             </div>
           </div>
-
-          {/* Card 3 */}
-          <div className="bg-gray-900 border border-gray-800 p-6 rounded-2xl">
-            <div className="flex text-yellow-400 text-sm mb-4">★★★★★</div>
-            <p className="text-gray-300 text-sm italic mb-6 leading-relaxed">"Mình dân văn phòng không biết tí gì về code hay cách cài MT5. Chỉ cần gửi đúng cái số tài khoản và pass, admin lo từ A-Z. Vote 5 sao cho dịch vụ."</p>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-full flex items-center justify-center text-white font-bold">M</div>
-              <div>
-                <div className="text-white font-bold text-sm">Anh Minh</div>
-                <div className="text-xs text-gray-500">Đầu tư dài hạn</div>
-              </div>
+          <div className="bg-gradient-to-br from-[#131B2C] to-[#0B0F19] border border-white/5 p-8 rounded-2xl flex gap-6 items-start">
+            <div className="w-12 h-12 shrink-0 rounded-full bg-blue-500/10 flex items-center justify-center text-2xl">🤖</div>
+            <div>
+              <h3 className="text-xl font-bold text-white mb-2">Đã có sẵn EA</h3>
+              <p className="text-gray-400">Bạn đã có chiến lược EA ngon và chỉ cần một nơi để triển khai nó thuận tiện nhất.</p>
             </div>
           </div>
-
-          {/* Card 4 */}
-          <div className="bg-gray-900 border border-gray-800 p-6 rounded-2xl">
-            <div className="flex text-yellow-400 text-sm mb-4">★★★★★</div>
-            <p className="text-gray-300 text-sm italic mb-6 leading-relaxed">"Chạy mượt, không bị miss lệnh do sập VPS như đợt trước mình tự làm. Rất yên tâm giao tài khoản cho anh em EA Helper vận hành. Sẽ còn giới thiệu thêm bạn bè."</p>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-bold">Q</div>
-              <div>
-                <div className="text-white font-bold text-sm">Bạn Quang</div>
-                <div className="text-xs text-gray-500">Quản lý quỹ nhỏ</div>
-              </div>
+          <div className="bg-gradient-to-br from-[#131B2C] to-[#0B0F19] border border-white/5 p-8 rounded-2xl flex gap-6 items-start">
+            <div className="w-12 h-12 shrink-0 rounded-full bg-blue-500/10 flex items-center justify-center text-2xl">📊</div>
+            <div>
+              <h3 className="text-xl font-bold text-white mb-2">Muốn quản lý tập trung</h3>
+              <p className="text-gray-400">Theo dõi trạng thái, lợi nhuận của tất cả tài khoản trên một Dashboard duy nhất.</p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* CTA FOOTER */}
-      <section className="py-24 max-w-4xl mx-auto px-6 text-center">
-        <div className="bg-gradient-to-b from-blue-900/20 to-gray-950 border border-blue-900/30 p-10 md:p-16 rounded-3xl shadow-2xl flex flex-col items-center relative overflow-hidden">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-blue-500/10 blur-[100px] -z-10"></div>
+      {/* 5. WHAT IS EA HELPER (Visual Flow) */}
+      <section className="py-24 bg-[#0F1423] border-y border-white/5 text-center overflow-hidden">
+        <div className="max-w-5xl mx-auto px-6">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">EA HELPER là gì?</h2>
+          <p className="text-gray-400 text-lg mb-16 max-w-2xl mx-auto">
+            EA HELPER là nền tảng hỗ trợ triển khai và quản lý EA Trading dành cho nhà đầu tư cá nhân.
+          </p>
           
-          <h2 className="text-3xl md:text-5xl font-black text-white mb-6">Sẵn Sàng Để Bot Làm Việc Thay Bạn?</h2>
-          <p className="text-gray-400 mb-10 text-lg max-w-2xl">Đừng để rào cản kỹ thuật làm chậm tốc độ kiếm tiền của bạn. Hãy để chúng tôi lo phần hệ thống khó nhất.</p>
+          <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8 font-mono text-sm md:text-base font-bold">
+            <div className="bg-[#131B2C] border border-white/10 py-4 px-6 rounded-xl text-white shadow-lg">MT5 ACCOUNT</div>
+            <div className="text-blue-500 hidden md:block">→</div><div className="text-blue-500 md:hidden">↓</div>
+            <div className="bg-blue-600 border border-blue-500 py-4 px-6 rounded-xl text-white shadow-lg shadow-blue-600/30">EA HELPER</div>
+            <div className="text-blue-500 hidden md:block">→</div><div className="text-blue-500 md:hidden">↓</div>
+            <div className="bg-[#131B2C] border border-white/10 py-4 px-6 rounded-xl text-white shadow-lg">VPS / INFRA</div>
+            <div className="text-blue-500 hidden md:block">→</div><div className="text-blue-500 md:hidden">↓</div>
+            <div className="bg-[#131B2C] border border-white/10 py-4 px-6 rounded-xl text-white shadow-lg">EA EXECUTION</div>
+            <div className="text-blue-500 hidden md:block">→</div><div className="text-blue-500 md:hidden">↓</div>
+            <div className="bg-green-600/20 border border-green-500/30 text-green-400 py-4 px-6 rounded-xl shadow-lg">DASHBOARD</div>
+          </div>
+
+          <p className="mt-16 text-xl text-white font-medium">
+            Bạn tập trung vào chiến lược. <span className="text-blue-400">EA HELPER hỗ trợ phần hệ thống.</span>
+          </p>
+        </div>
+      </section>
+
+      {/* 6. FEATURES */}
+      <section id="features" className="py-24 max-w-7xl mx-auto px-6">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Mọi thứ cần thiết để vận hành EA, đơn giản hơn.</h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[
+            { i: "⚙️", t: "EA Setup", d: "Hỗ trợ cấu hình và triển khai EA chuẩn xác lên tài khoản MT5 của bạn." },
+            { i: "🖥️", t: "VPS Infrastructure", d: "Hạ tầng máy chủ 24/7 ổn định, phục vụ riêng cho vận hành EA Trading." },
+            { i: "👥", t: "Account Management", d: "Quản lý nhiều tài khoản giao dịch khác nhau trên cùng một hệ thống." },
+            { i: "📡", t: "EA Monitoring", d: "Theo dõi trạng thái kết nối của EA và cảnh báo khi mất tín hiệu." },
+            { i: "📈", t: "Performance Dashboard", d: "Tổng hợp Balance, Equity, Profit, Drawdown Real-time đẹp mắt." },
+            { i: "👨‍💻", t: "Technical Support", d: "Hỗ trợ xử lý nhanh chóng khi gặp sự cố máy chủ hoặc lỗi kỹ thuật." }
+          ].map((f, i) => (
+            <div key={i} className="bg-[#131B2C] border border-white/5 p-8 rounded-2xl hover:bg-white/[0.02] transition cursor-default group">
+              <div className="text-3xl mb-4 group-hover:scale-110 transition-transform origin-left">{f.i}</div>
+              <h3 className="text-lg font-bold text-white mb-2">{f.t}</h3>
+              <p className="text-gray-400 text-sm leading-relaxed">{f.d}</p>
+            </div>
+          ))}
+        </div>
+        <div className="text-center mt-12">
+           <Link href={portalLink} className="inline-block bg-white hover:bg-gray-200 text-[#0B0F19] text-base font-bold px-8 py-3.5 rounded-xl transition">
+              Bắt đầu với EA HELPER
+           </Link>
+        </div>
+      </section>
+
+      {/* 7. DASHBOARD DEMO */}
+      <section className="py-24 bg-[#0F1423] border-y border-white/5 overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">Theo dõi EA của bạn trên một Dashboard duy nhất.</h2>
+          <p className="text-gray-400 mb-12">Giao diện quản lý trực quan, không cần đăng nhập VPS.</p>
           
-          <div className="flex flex-col sm:flex-row items-center gap-4 w-full justify-center">
-            <a href={zaloLink} target="_blank" rel="noopener noreferrer" className="bg-blue-600 hover:bg-blue-700 text-white text-xl font-bold px-10 py-5 rounded-2xl transition shadow-xl shadow-blue-600/30 w-full sm:w-auto flex items-center justify-center gap-3">
-              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.7.45 3.31 1.25 4.75L2 22l5.36-1.12C8.75 21.6 10.33 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm4.81 14.33c-.22.61-1.27 1.15-1.78 1.21-.42.05-1 .18-3.08-.68-2.5-1.03-4.14-3.6-4.27-3.77-.13-.18-1.02-1.36-1.02-2.6 0-1.23.64-1.84.87-2.09.23-.25.5-.31.67-.31.17 0 .34 0 .49.01.16.01.38-.06.59.45.22.52.71 1.74.77 1.87.06.13.11.28.02.46-.08.18-.13.28-.25.42-.13.14-.26.31-.38.42-.11.11-.23.23-.1.45.13.22.58.96 1.25 1.56.87.77 1.58 1.01 1.8 1.12.22.11.35.09.48-.05.14-.15.61-.71.77-.96.16-.25.33-.21.53-.13.21.08 1.32.62 1.54.74.22.11.37.17.42.27.06.1.06.56-.16 1.17z"/></svg>
-              Inbox Zalo Ngay
+          <div className="bg-[#0B0F19] border border-white/10 rounded-2xl p-2 md:p-6 shadow-2xl mx-auto max-w-5xl">
+            {/* Header Demo */}
+            <div className="flex justify-between items-center bg-[#131B2C] p-4 rounded-xl border border-white/5 mb-4">
+               <div className="text-white font-bold">Trading Overview (Demo Data)</div>
+               <div className="text-sm bg-blue-500/20 text-blue-400 px-3 py-1 rounded-md">Live Update</div>
+            </div>
+            
+            {/* Stats Demo */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+               {['Balance: $12,450', 'Profit Today: +$125', 'Drawdown: 1.2%', 'Open Orders: 5'].map((s, i) => (
+                 <div key={i} className="bg-[#131B2C] border border-white/5 p-4 rounded-xl text-left">
+                   <div className="text-white font-mono text-sm md:text-base font-bold">{s.split(':')[0]}</div>
+                   <div className="text-gray-400 text-sm mt-1">{s.split(':')[1]}</div>
+                 </div>
+               ))}
+            </div>
+
+            {/* Table Demo */}
+            <div className="overflow-x-auto bg-[#131B2C] border border-white/5 rounded-xl">
+              <table className="w-full text-left text-sm whitespace-nowrap">
+                <thead className="bg-white/5 text-gray-400">
+                  <tr>
+                    <th className="p-4 font-medium">Account</th>
+                    <th className="p-4 font-medium">Broker</th>
+                    <th className="p-4 font-medium">EA Status</th>
+                    <th className="p-4 font-medium">Profit</th>
+                  </tr>
+                </thead>
+                <tbody className="text-white">
+                  <tr className="border-t border-white/5">
+                    <td className="p-4 font-mono">1188204</td>
+                    <td className="p-4">Exness-Real15</td>
+                    <td className="p-4"><span className="text-green-400">Running</span></td>
+                    <td className="p-4 text-green-400">+$82.50</td>
+                  </tr>
+                  <tr className="border-t border-white/5">
+                    <td className="p-4 font-mono">3099121</td>
+                    <td className="p-4">Vantage-Live</td>
+                    <td className="p-4"><span className="text-green-400">Running</span></td>
+                    <td className="p-4 text-green-400">+$42.00</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          
+          <div className="mt-12">
+            <Link href={dashboardLink} className="inline-block bg-transparent border border-gray-600 hover:border-white text-white text-base font-bold px-8 py-3.5 rounded-xl transition">
+              👀 Xem Demo Thực Tế
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* 8. HOW IT WORKS */}
+      <section id="how-it-works" className="py-24 max-w-5xl mx-auto px-6">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Bắt đầu chỉ với 3 bước</h2>
+        </div>
+        <div className="relative border-l border-white/10 ml-4 md:ml-12 space-y-12 pb-4">
+           
+           <div className="relative pl-8 md:pl-16">
+              <div className="absolute top-0 left-[-16px] w-8 h-8 bg-[#0B0F19] border-2 border-blue-500 rounded-full flex items-center justify-center text-xs font-bold text-blue-400">01</div>
+              <h3 className="text-xl font-bold text-white mb-2">Khai báo tài khoản</h3>
+              <p className="text-gray-400">Đăng ký thành viên trên EA HELPER và thêm thông tin tài khoản MT5 của bạn vào hệ thống.</p>
+           </div>
+           
+           <div className="relative pl-8 md:pl-16">
+              <div className="absolute top-0 left-[-16px] w-8 h-8 bg-[#0B0F19] border-2 border-blue-500 rounded-full flex items-center justify-center text-xs font-bold text-blue-400">02</div>
+              <h3 className="text-xl font-bold text-white mb-2">Gửi yêu cầu setup</h3>
+              <p className="text-gray-400">Chọn tệp EA của bạn và ghi chú các yêu cầu cấu hình (Input, thông số Lot, quản lý rủi ro).</p>
+           </div>
+           
+           <div className="relative pl-8 md:pl-16">
+              <div className="absolute top-0 left-[-16px] w-8 h-8 bg-[#0B0F19] border-2 border-blue-500 rounded-full flex items-center justify-center text-xs font-bold text-blue-400">03</div>
+              <h3 className="text-xl font-bold text-white mb-2">Theo dõi</h3>
+              <p className="text-gray-400">Chúng tôi tiến hành setup trên VPS riêng biệt. Bạn chỉ cần mở Dashboard để theo dõi kết quả giao dịch.</p>
+           </div>
+
+        </div>
+      </section>
+
+      {/* 9. VALUE STACK (Tự làm vs EA HELPER) */}
+      <section className="py-24 bg-[#0F1423] border-y border-white/5">
+        <div className="max-w-5xl mx-auto px-6">
+          <h2 className="text-3xl md:text-4xl font-bold text-white text-center mb-16">Thay vì tự xử lý tất cả...</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            <div className="bg-[#0B0F19] border border-red-900/30 p-8 rounded-2xl">
+              <div className="text-gray-500 font-bold mb-6 tracking-widest text-sm">TỰ LÀM</div>
+              <ul className="space-y-4 text-gray-400">
+                <li className="flex gap-3"><span className="text-red-500 font-bold">✕</span> Tự tìm và mua VPS</li>
+                <li className="flex gap-3"><span className="text-red-500 font-bold">✕</span> Tự cấu hình bảo mật máy chủ</li>
+                <li className="flex gap-3"><span className="text-red-500 font-bold">✕</span> Tự tải và cài đặt MT5</li>
+                <li className="flex gap-3"><span className="text-red-500 font-bold">✕</span> Chỉnh thông số EA thủ công</li>
+                <li className="flex gap-3"><span className="text-red-500 font-bold">✕</span> Tự khắc phục lỗi khi sập nguồn</li>
+                <li className="flex gap-3"><span className="text-red-500 font-bold">✕</span> Phải Login VPS liên tục để check</li>
+              </ul>
+            </div>
+
+            <div className="bg-gradient-to-b from-[#131B2C] to-[#0B0F19] border border-blue-500/30 p-8 rounded-2xl relative shadow-[0_0_40px_rgba(59,130,246,0.1)]">
+              <div className="text-blue-400 font-bold mb-6 tracking-widest text-sm">EA HELPER</div>
+              <ul className="space-y-4 text-white">
+                <li className="flex gap-3 items-center"><span className="w-5 h-5 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center text-xs font-bold">✓</span> Hỗ trợ setup toàn bộ</li>
+                <li className="flex gap-3 items-center"><span className="w-5 h-5 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center text-xs font-bold">✓</span> Hạ tầng VPS tốc độ cao</li>
+                <li className="flex gap-3 items-center"><span className="w-5 h-5 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center text-xs font-bold">✓</span> Quản lý tài khoản tập trung</li>
+                <li className="flex gap-3 items-center"><span className="w-5 h-5 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center text-xs font-bold">✓</span> Bảng Dashboard Real-time</li>
+                <li className="flex gap-3 items-center"><span className="w-5 h-5 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center text-xs font-bold">✓</span> Giám sát kết nối (Monitoring)</li>
+                <li className="flex gap-3 items-center"><span className="w-5 h-5 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center text-xs font-bold">✓</span> Đội ngũ Technical Support</li>
+              </ul>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* 10. PRICING */}
+      <section id="pricing" className="py-24 max-w-7xl mx-auto px-6 text-center">
+        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Gói dịch vụ</h2>
+        <p className="text-gray-400 mb-16">Chi phí linh hoạt phù hợp với quy mô đầu tư của bạn.</p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto text-left">
+          {/* Starter */}
+          <div className="bg-[#131B2C] border border-white/5 p-8 rounded-2xl flex flex-col">
+            <h3 className="text-xl font-bold text-white mb-2">STARTER</h3>
+            <p className="text-sm text-gray-400 mb-6 flex-1">Dành cho nhà đầu tư cá nhân muốn chạy 1-2 tài khoản EA thử nghiệm.</p>
+            <div className="text-3xl font-black text-white mb-6">Liên hệ</div>
+            <Link href={portalLink} className="w-full bg-white/10 hover:bg-white/20 text-white text-center py-3 rounded-lg font-bold transition">
+              Đăng ký
+            </Link>
+          </div>
+          
+          {/* Pro */}
+          <div className="bg-[#0B0F19] border border-blue-500/50 p-8 rounded-2xl flex flex-col relative shadow-[0_0_30px_rgba(59,130,246,0.15)] transform md:-translate-y-4">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full">POPULAR</div>
+            <h3 className="text-xl font-bold text-white mb-2">PRO</h3>
+            <p className="text-sm text-gray-400 mb-6 flex-1">Dành cho người có nhu cầu chạy nhiều tài khoản, yêu cầu VPS chuyên biệt và cấu hình riêng.</p>
+            <div className="text-3xl font-black text-white mb-6">Liên hệ</div>
+            <Link href={portalLink} className="w-full bg-blue-600 hover:bg-blue-500 text-white text-center py-3 rounded-lg font-bold transition">
+              Đăng ký Pro
+            </Link>
+          </div>
+
+          {/* Business */}
+          <div className="bg-[#131B2C] border border-white/5 p-8 rounded-2xl flex flex-col">
+            <h3 className="text-xl font-bold text-white mb-2">BUSINESS</h3>
+            <p className="text-sm text-gray-400 mb-6 flex-1">Quản lý quỹ, IB hoặc khách hàng có nhu cầu custom setup toàn hệ thống lớn.</p>
+            <div className="text-3xl font-black text-white mb-6">Liên hệ</div>
+            <a href={zaloLink} target="_blank" className="w-full bg-white/10 hover:bg-white/20 text-white text-center py-3 rounded-lg font-bold transition">
+              Liên hệ Zalo
             </a>
           </div>
-          <p className="mt-6 text-sm text-gray-500">Hoặc liên hệ admin Zalo: <span className="text-blue-400 font-semibold">EA Helper System</span></p>
         </div>
       </section>
 
-      <footer className="border-t border-gray-800/50 py-10 text-center text-sm text-gray-500">
-        <p>© {new Date().getFullYear()} EA HELPER PLATFORM. Giải pháp tự động hóa giao dịch.</p>
+      {/* 11. TRUST & SECURITY */}
+      <section className="py-24 bg-[#0F1423] border-y border-white/5">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl font-bold text-white mb-4">Tại sao chọn EA HELPER?</h2>
+            <p className="text-gray-400">Bạn kiểm soát tài khoản của mình. Chúng tôi chỉ lo phần công nghệ.</p>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="bg-[#0B0F19] border border-white/5 p-6 rounded-xl">
+               <h4 className="text-white font-bold mb-2 flex items-center gap-2"><span className="text-blue-500">🛡️</span> Phân quyền User/Admin</h4>
+               <p className="text-sm text-gray-400">EA HELPER được thiết kế với hệ thống phân quyền rõ ràng, bạn chỉ xem được data của chính mình.</p>
+            </div>
+            <div className="bg-[#0B0F19] border border-white/5 p-6 rounded-xl">
+               <h4 className="text-white font-bold mb-2 flex items-center gap-2"><span className="text-blue-500">🔒</span> Mật khẩu an toàn</h4>
+               <p className="text-sm text-gray-400">Mật khẩu MT5 không hiển thị công khai trên UI, hạn chế tối đa rủi ro truy cập trái phép.</p>
+            </div>
+            <div className="bg-[#0B0F19] border border-white/5 p-6 rounded-xl">
+               <h4 className="text-white font-bold mb-2 flex items-center gap-2"><span className="text-blue-500">🖥️</span> Quy trình setup minh bạch</h4>
+               <p className="text-sm text-gray-400">Làm việc trực tiếp qua CRM nội bộ, cài đặt chuẩn chỉ trên các VPS sạch 100%.</p>
+            </div>
+            <div className="bg-[#0B0F19] border border-white/5 p-6 rounded-xl">
+               <h4 className="text-white font-bold mb-2 flex items-center gap-2"><span className="text-blue-500">⚡</span> Hỗ trợ vận hành</h4>
+               <p className="text-sm text-gray-400">Đội ngũ kỹ thuật hỗ trợ restart máy chủ, xử lý nghẽn mạng ngay khi phát sinh sự cố.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 12. FAQ */}
+      <section id="faq" className="py-24 max-w-3xl mx-auto px-6">
+        <h2 className="text-3xl font-bold text-white mb-10 text-center">Câu hỏi thường gặp</h2>
+        <div className="space-y-4">
+          {faqs.map((f, i) => (
+            <div key={i} className="bg-[#131B2C] border border-white/5 rounded-xl overflow-hidden transition-all">
+              <button 
+                className="w-full text-left px-6 py-5 flex justify-between items-center text-white font-semibold hover:bg-white/5"
+                onClick={() => setOpenFaq(openFaq === i ? null : i)}
+              >
+                {f.q}
+                <span className="text-blue-500 text-xl">{openFaq === i ? '−' : '+'}</span>
+              </button>
+              {openFaq === i && (
+                <div className="px-6 pb-5 text-gray-400 text-sm leading-relaxed border-t border-white/5 pt-4">
+                  {f.a}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 13. FINAL CTA */}
+      <section className="py-24 px-6">
+        <div className="max-w-4xl mx-auto bg-gradient-to-br from-blue-900/40 to-[#0B0F19] border border-blue-500/20 p-12 md:p-16 rounded-3xl text-center relative overflow-hidden">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-blue-500/10 blur-[80px] -z-10"></div>
+          <h2 className="text-3xl md:text-5xl font-black text-white mb-6">Sẵn sàng chạy EA đơn giản hơn?</h2>
+          <p className="text-gray-400 text-lg mb-10">Không cần biến mình thành chuyên gia kỹ thuật. Hãy để EA HELPER hỗ trợ phần hệ thống.</p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link href={portalLink} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white text-lg font-bold px-10 py-4 rounded-xl transition shadow-xl shadow-blue-600/30">
+              🚀 Bắt đầu với EA HELPER
+            </Link>
+            <a href={zaloLink} target="_blank" className="w-full sm:w-auto bg-white/5 hover:bg-white/10 border border-white/10 text-white text-lg font-bold px-8 py-4 rounded-xl transition">
+              💬 Liên hệ Hỗ trợ
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* 14. FOOTER & DISCLAIMER */}
+      <footer className="border-t border-white/5 pt-16 pb-8 bg-[#0B0F19]">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
+          <div className="md:col-span-2">
+            <Link href="/" className="font-black text-2xl tracking-tighter text-white flex items-center gap-2 mb-4">
+              EA<span className="text-blue-500">HELPER</span>
+            </Link>
+            <p className="text-gray-500 text-sm max-w-sm">Nền tảng hỗ trợ triển khai và quản lý EA Trading chuyên nghiệp dành cho nhà đầu tư cá nhân.</p>
+          </div>
+          <div>
+            <h4 className="text-white font-bold mb-4">Navigation</h4>
+            <ul className="space-y-2 text-sm text-gray-500">
+              <li><a href="#" className="hover:text-white transition">Trang chủ</a></li>
+              <li><a href="#features" className="hover:text-white transition">Tính năng</a></li>
+              <li><a href="#pricing" className="hover:text-white transition">Bảng giá</a></li>
+              <li><a href="#faq" className="hover:text-white transition">FAQ</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-white font-bold mb-4">Support</h4>
+            <ul className="space-y-2 text-sm text-gray-500">
+              <li><Link href={dashboardLink} className="hover:text-white transition">Đăng nhập</Link></li>
+              <li><Link href={portalLink} className="hover:text-white transition">Đăng ký tài khoản</Link></li>
+              <li><a href={zaloLink} target="_blank" className="hover:text-blue-400 transition">Zalo Group</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-6 border-t border-white/5 pt-8 text-xs text-gray-600 text-center leading-relaxed">
+          <p className="mb-4">
+            <strong>DISCLAIMER:</strong> EA HELPER là nền tảng quản lý phần mềm và hạ tầng kỹ thuật. Chúng tôi <strong>không</strong> cam kết lợi nhuận, không lôi kéo đầu tư và không đảm bảo hiệu suất giao dịch. Kết quả giao dịch phụ thuộc hoàn toàn vào chiến lược EA của bạn, biến động thị trường và các yếu tố rủi ro liên quan.
+          </p>
+          <p>© {new Date().getFullYear()} EA HELPER. All rights reserved.</p>
+        </div>
       </footer>
+
+      {/* 15. MOBILE STICKY BOTTOM CTA */}
+      <div className="md:hidden fixed bottom-0 left-0 w-full p-4 bg-[#0B0F19]/90 backdrop-blur-md border-t border-white/10 z-50">
+         <Link href={portalLink} className="flex justify-center w-full bg-blue-600 text-white text-base font-bold px-4 py-3.5 rounded-xl shadow-[0_-5px_20px_rgba(37,99,235,0.2)]">
+            🚀 Bắt đầu với EA HELPER
+         </Link>
+      </div>
 
     </main>
   );
