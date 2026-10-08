@@ -133,7 +133,7 @@ export default function AdminDashboard() {
           <form onSubmit={handleAdminLogin} className="space-y-4 pt-4">
             <input
               type="password"
-              placeholder="Nhập mã truy cập (admin123456)..."
+              placeholder="Nhập mã truy cập (*****)..."
               value={adminPasscode}
               onChange={(e) => setAdminPasscode(e.target.value)}
               className="w-full bg-gray-950 border border-gray-800 rounded-xl p-3.5 text-center text-white outline-none focus:border-red-500 transition tracking-widest"
