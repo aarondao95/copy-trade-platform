@@ -392,7 +392,7 @@ export default function LandingPage() {
           <div className="bg-[#131B2C] border border-white/5 p-8 rounded-2xl flex flex-col">
             <h3 className="text-xl font-bold text-white mb-2">STARTER</h3>
             <p className="text-sm text-gray-400 mb-6 flex-1">Dành cho nhà đầu tư cá nhân muốn chạy 1-2 tài khoản EA thử nghiệm.</p>
-            <div className="text-3xl font-black text-white mb-6">Liên hệ</div>
+            <div className="text-3xl font-black text-white mb-6">170k/tháng</div>
             <Link href={portalLink} className="w-full bg-white/10 hover:bg-white/20 text-white text-center py-3 rounded-lg font-bold transition">
               Đăng ký
             </Link>
@@ -403,7 +403,7 @@ export default function LandingPage() {
             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full">POPULAR</div>
             <h3 className="text-xl font-bold text-white mb-2">PRO</h3>
             <p className="text-sm text-gray-400 mb-6 flex-1">Dành cho người có nhu cầu chạy nhiều tài khoản, yêu cầu VPS chuyên biệt và cấu hình riêng.</p>
-            <div className="text-3xl font-black text-white mb-6">Liên hệ</div>
+            <div className="text-3xl font-black text-white mb-6">135k/tháng</div>
             <Link href={portalLink} className="w-full bg-blue-600 hover:bg-blue-500 text-white text-center py-3 rounded-lg font-bold transition">
               Đăng ký Pro
             </Link>
