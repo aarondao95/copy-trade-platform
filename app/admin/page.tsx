@@ -19,6 +19,7 @@ export default function AdminDashboard() {
   const [accountNumber, setAccountNumber] = useState('');
   const [accountPass, setAccountPass] = useState('');
   const [userEmail, setUserEmail] = useState('');
+  const [zaloNumber, setZaloNumber] = useState(''); // THÊM STATE ZALO
   const [serverBroker, setServerBroker] = useState('');
   const [balance, setBalance] = useState('');
   const [customNotes, setCustomNotes] = useState('');
@@ -85,6 +86,7 @@ export default function AdminDashboard() {
         account_number: accountNumber,
         account_pass: accountPass,
         user_email: userEmail,
+        zalo_number: zaloNumber, // LƯU ZALO VÀO DB
         server_broker: serverBroker,
         initial_balance: parseFloat(balance),
         balance: parseFloat(balance),
@@ -98,7 +100,7 @@ export default function AdminDashboard() {
 
     if (error) alert('Lỗi khi thêm: ' + error.message);
     else {
-      setAccountNumber(''); setAccountPass(''); setUserEmail(''); setServerBroker(''); setBalance(''); setCustomNotes(''); setSubscriptionDays('30');
+      setAccountNumber(''); setAccountPass(''); setUserEmail(''); setZaloNumber(''); setServerBroker(''); setBalance(''); setCustomNotes(''); setSubscriptionDays('30');
       fetchAccounts();
     }
     setSubmitting(false);
@@ -136,10 +138,10 @@ export default function AdminDashboard() {
     }
   }
 
-  // TÍNH NĂNG MỚI: CẬP NHẬT GHI CHÚ TRỰC TIẾP
+  // CẬP NHẬT GHI CHÚ TRỰC TIẾP
   async function handleUpdateNote(id: any, currentNote: string) {
     const newNote = prompt('SỬA GHI CHÚ (Tên khách, Tên VPS, Bot, Trạng thái...):', currentNote || '');
-    if (newNote !== null) { // Nếu bấm Cancel thì ko làm gì, nếu bấm OK thì lưu
+    if (newNote !== null) { 
       const { error } = await supabase
         .from('trading_accounts')
         .update({ custom_notes: newNote })
@@ -184,7 +186,12 @@ export default function AdminDashboard() {
 
   const filteredAccounts = accounts.filter((acc) => {
     const searchLower = searchTerm.toLowerCase();
-    return (acc.account_number?.toLowerCase().includes(searchLower) || acc.user_email?.toLowerCase().includes(searchLower) || acc.custom_notes?.toLowerCase().includes(searchLower));
+    return (
+      acc.account_number?.toLowerCase().includes(searchLower) || 
+      acc.user_email?.toLowerCase().includes(searchLower) || 
+      acc.zalo_number?.toLowerCase().includes(searchLower) || // TÌM KIẾM THEO ZALO
+      acc.custom_notes?.toLowerCase().includes(searchLower)
+    );
   });
 
   const indexOfLastRow = currentPage * rowsPerPage;
@@ -215,6 +222,10 @@ export default function AdminDashboard() {
             <div><label className="block text-xs text-gray-400 mb-1">Pass (Mật khẩu)</label><input type="text" value={accountPass} onChange={(e) => setAccountPass(e.target.value)} className="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-sm text-white outline-none focus:border-blue-500 font-mono" /></div>
             <div><label className="block text-xs text-gray-400 mb-1">Server Broker</label><input type="text" value={serverBroker} onChange={(e) => setServerBroker(e.target.value)} className="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-sm text-white outline-none focus:border-blue-500" /></div>
             <div><label className="block text-xs text-gray-400 mb-1">Email Khách</label><input type="email" value={userEmail} onChange={(e) => setUserEmail(e.target.value)} className="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-sm text-white outline-none focus:border-blue-500" /></div>
+            
+            {/* INPUT ZALO MỚI */}
+            <div><label className="block text-xs text-gray-400 mb-1">SĐT / Zalo</label><input type="text" value={zaloNumber} onChange={(e) => setZaloNumber(e.target.value)} className="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-sm text-white outline-none focus:border-blue-500 font-mono" /></div>
+            
             <div><label className="block text-xs text-gray-400 mb-1">Vốn Khách ($)</label><input type="number" value={balance} onChange={(e) => setBalance(e.target.value)} className="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-sm text-white outline-none focus:border-blue-500 font-mono text-green-400" /></div>
             <div className="md:col-span-2"><label className="block text-xs text-gray-400 mb-1">Ghi chú (Tên khách, VPS, Yêu cầu...)</label><input type="text" value={customNotes} onChange={(e) => setCustomNotes(e.target.value)} className="w-full bg-gray-950 border border-gray-800 rounded-xl p-2.5 text-sm text-white outline-none focus:border-blue-500" /></div>
             
@@ -236,7 +247,7 @@ export default function AdminDashboard() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-xl">
             <h2 className="text-lg font-bold text-white">📋 Quản Lý Thời Gian & Cài Đặt Khách Hàng</h2>
             <div className="w-full md:w-80">
-              <input type="text" placeholder="🔍 Tìm ID, Email, Ghi chú..." value={searchTerm} onChange={(e) => {setSearchTerm(e.target.value); setCurrentPage(1);}} className="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-blue-500" />
+              <input type="text" placeholder="🔍 Tìm ID, Email, Zalo, Ghi chú..." value={searchTerm} onChange={(e) => {setSearchTerm(e.target.value); setCurrentPage(1);}} className="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-sm text-white outline-none focus:border-blue-500" />
             </div>
           </div>
 
@@ -273,9 +284,11 @@ export default function AdminDashboard() {
                           </div>
 
                           <div className="lg:col-span-1">
-                            <div className="text-xs text-gray-500 font-medium">Broker & Email</div>
+                            <div className="text-xs text-gray-500 font-medium">Broker & Liên hệ</div>
                             <div className="text-sm font-medium text-white mt-1 break-all">{acc.server_broker || 'Chưa nhập'}</div>
-                            <div className="text-xs text-blue-400 mt-1">{acc.user_email}</div>
+                            <div className="text-xs text-blue-400 mt-1 break-all">{acc.user_email}</div>
+                            {/* HIỂN THỊ ZALO TẠI ĐÂY */}
+                            <div className="text-xs text-green-400 mt-1 font-mono font-bold">📞 Zalo: {acc.zalo_number || 'N/A'}</div>
                           </div>
 
                           {/* ĐẾM NGƯỢC THỜI GIAN */}
@@ -314,7 +327,7 @@ export default function AdminDashboard() {
                           </div>
                         </div>
 
-                        {/* Hàng 2: GHI CHÚ NỘI BỘ (MỚI THÊM) */}
+                        {/* Hàng 2: GHI CHÚ NỘI BỘ */}
                         <div className="bg-gray-950 border border-gray-800 rounded-xl p-3 flex justify-between items-start gap-4 shadow-inner">
                           <div className="flex-1">
                             <div className="text-xs text-gray-500 font-bold mb-1">📝 GHI CHÚ (Tên khách / Tên VPS / Tên Bot / Tình trạng)</div>
