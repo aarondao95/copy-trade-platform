@@ -1,6 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState } from 'px-react'; // hoặc từ 'react'
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 const BRAND_NAME = "Trading Hub";
 
@@ -8,10 +13,11 @@ export default function TradingHubLanding() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
+  // Form state
   const [formData, setFormData] = useState({
     fullName: '',
     contact: '',
-    accountCount: '1-5',
+    accountCount: '1-5 tài khoản',
     platform: 'MetaTrader 5 (MT5)'
   });
   const [formStatus, setFormStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
@@ -21,7 +27,8 @@ export default function TradingHubLanding() {
     console.log(`[Tracking Event]: ${eventName}`);
   };
 
-  const handleFormSubmit = (e: React.FormEvent) => {
+  // XỬ LÝ GỬI FORM VÀ LƯU VÀO SUPABASE (ADMIN CRM QUEUE)
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     trackEvent('signup_form_submit');
     
@@ -32,10 +39,36 @@ export default function TradingHubLanding() {
     }
 
     setFormStatus('loading');
-    setTimeout(() => {
+
+    // Kiểm tra xem contact là Email hay Số điện thoại/Zalo
+    const isEmail = formData.contact.includes('@');
+
+    // Đưa dữ liệu vào bảng trading_accounts chung với hệ thống Admin CRM
+    const { error } = await supabase.from('trading_accounts').insert([
+      {
+        account_number: 'N/A (Trading Hub)',
+        account_pass: 'N/A',
+        user_email: isEmail ? formData.contact.trim() : 'lead_tradinghub@system.local',
+        zalo_number: !isEmail ? formData.contact.trim() : '',
+        server_broker: formData.platform,
+        initial_balance: 0,
+        balance: 0,
+        equity: 0,
+        bot_status: 'Pending', // Đưa vào hàng đợi chờ xử lý của Admin
+        subscription_days: 30,
+        // PHẦN NOTE THEO YÊU CẦU: BẮT ĐẦU BẰNG TRADING HUB VÀ CHI TIẾT KHÁCH KHAI BÁO
+        custom_notes: `TRADING HUB | Họ tên: ${formData.fullName} | SL Acc: ${formData.accountCount} | Nền tảng: ${formData.platform}`
+      }
+    ]);
+
+    if (error) {
+      setFormStatus('error');
+      setErrorMessage('Lỗi khi gửi đăng ký: ' + error.message);
+    } else {
       setFormStatus('success');
       setErrorMessage('');
-    }, 1000);
+      setFormData({ fullName: '', contact: '', accountCount: '1-5 tài khoản', platform: 'MetaTrader 5 (MT5)' });
+    }
   };
 
   const toggleFaq = (index: number) => {
@@ -540,7 +573,7 @@ export default function TradingHubLanding() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">Email hoặc Số điện thoại *</label>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">Email hoặc Số điện thoại / Zalo *</label>
                   <input 
                     type="text" 
                     required
@@ -559,9 +592,9 @@ export default function TradingHubLanding() {
                       onChange={(e) => setFormData({...formData, accountCount: e.target.value})}
                       className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition"
                     >
-                      <option value="1-5">1 - 5 tài khoản</option>
-                      <option value="6-20">6 - 20 tài khoản</option>
-                      <option value="20+">Hơn 20 tài khoản</option>
+                      <option value="1-5 tài khoản">1 - 5 tài khoản</option>
+                      <option value="6-20 tài khoản">6 - 20 tài khoản</option>
+                      <option value="20+ tài khoản">Hơn 20 tài khoản</option>
                     </select>
                   </div>
 
@@ -584,7 +617,7 @@ export default function TradingHubLanding() {
                   disabled={formStatus === 'loading'}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 rounded-xl shadow-lg transition mt-2 flex items-center justify-center gap-2"
                 >
-                  {formStatus === 'loading' ? 'Đang xử lý...' : 'Gửi đăng ký trải nghiệm'}
+                  {formStatus === 'loading' ? 'Đang gửi thông tin...' : 'Gửi đăng ký trải nghiệm'}
                 </button>
               </form>
             )}
