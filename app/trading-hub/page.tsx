@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'px-react'; // hoặc từ 'react'
+import React, { useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -648,7 +648,7 @@ export default function TradingHubLanding() {
               </ul>
             </div>
             <div>
-              <h4 className="text-white font-semibold mb-3 text-xs uppercase tracking-wider">Pháp lý & Chính sách</h4>
+              <h4 className="text-white font-semibold mb-3 text-xs uppercase tracking-wider">Páp lý & Chính sách</h4>
               <ul className="space-y-2 text-xs">
                 <li><a href="#" className="hover:text-white transition">Chính sách quyền riêng tư</a></li>
                 <li><a href="#" className="hover:text-white transition">Điều khoản sử dụng dịch vụ</a></li>
