@@ -466,7 +466,7 @@ export default function TradingHubLanding() {
 
                 {/* 3. SỐ ĐIỆN THOẠI / ZALO */}
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">Số điện thoại / Zalo (để chốt sale) *</label>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">Số điện thoại / Zalo *</label>
                   <input 
                     type="text" 
                     required
