@@ -1,20 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { 
-  BarChart3, ShieldCheck, Smartphone, Layers, ArrowRight, 
-  CheckCircle2, Menu, X, ChevronDown, ChevronUp, Lock, RefreshCw, 
-  TrendingUp, Activity, Users, Globe, Database
-} from 'lucide-react';
 
-// Cấu hình tên thương hiệu dễ thay đổi
 const BRAND_NAME = "Trading Hub";
 
 export default function TradingHubLanding() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  // Form state
   const [formData, setFormData] = useState({
     fullName: '',
     contact: '',
@@ -24,11 +17,7 @@ export default function TradingHubLanding() {
   const [formStatus, setFormStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
 
-  // Track event giả lập CRO
   const trackEvent = (eventName: string) => {
-    if (typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('event', eventName);
-    }
     console.log(`[Tracking Event]: ${eventName}`);
   };
 
@@ -43,8 +32,6 @@ export default function TradingHubLanding() {
     }
 
     setFormStatus('loading');
-    
-    // Giả lập gọi API backend
     setTimeout(() => {
       setFormStatus('success');
       setErrorMessage('');
@@ -58,7 +45,7 @@ export default function TradingHubLanding() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 font-sans selection:bg-blue-600 selection:text-white">
       
-      {/* SECTION 1 — HEADER */}
+      {/* HEADER */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -90,11 +77,14 @@ export default function TradingHubLanding() {
             className="md:hidden text-slate-700 p-2"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
-            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            {mobileMenuOpen ? (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            ) : (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+            )}
           </button>
         </div>
 
-        {/* Mobile menu */}
         {mobileMenuOpen && (
           <div className="md:hidden bg-white border-b border-slate-200 px-4 pt-2 pb-6 space-y-3">
             <a href="#overview" onClick={() => setMobileMenuOpen(false)} className="block py-2 text-slate-700 font-medium">Tổng quan</a>
@@ -109,14 +99,15 @@ export default function TradingHubLanding() {
         )}
       </header>
 
-      {/* SECTION 2 — HERO */}
+      {/* HERO */}
       <section className="relative pt-16 pb-24 overflow-hidden bg-gradient-to-b from-white to-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             
             <div className="lg:col-span-6 space-y-6">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold">
-                <Activity size={14} /> Nền tảng tổng hợp dữ liệu giao dịch thông minh
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg> 
+                Nền tảng tổng hợp dữ liệu giao dịch thông minh
               </div>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-[1.1]">
                 Toàn bộ tài khoản giao dịch. <span className="text-blue-600">Trong một màn hình.</span>
@@ -130,7 +121,8 @@ export default function TradingHubLanding() {
                   onClick={() => trackEvent('hero_cta_click')}
                   className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-8 py-4 rounded-xl shadow-lg shadow-blue-600/20 text-center transition flex items-center justify-center gap-2"
                 >
-                  Đăng ký trải nghiệm <ArrowRight size={18} />
+                  Đăng ký trải nghiệm 
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
                 </a>
                 <a 
                   href="#dashboard-preview" 
@@ -143,7 +135,7 @@ export default function TradingHubLanding() {
               <p className="text-xs text-slate-400">Không yêu cầu cài đặt phần mềm phức tạp • Bảo mật dữ liệu tuyệt đối</p>
             </div>
 
-            {/* Dashboard Mockup Component */}
+            {/* Dashboard Mockup */}
             <div className="lg:col-span-6">
               <div className="bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 p-4 sm:p-6 text-white relative">
                 <div className="flex items-center justify-between pb-4 border-b border-slate-800">
@@ -158,7 +150,6 @@ export default function TradingHubLanding() {
                   </span>
                 </div>
 
-                {/* Summary Mini Cards */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 my-4">
                   <div className="bg-slate-800/60 p-3 rounded-xl border border-slate-700/50">
                     <p className="text-[10px] text-slate-400">Tài khoản</p>
@@ -178,7 +169,6 @@ export default function TradingHubLanding() {
                   </div>
                 </div>
 
-                {/* Biểu đồ giả lập */}
                 <div className="bg-slate-800/40 p-4 rounded-xl border border-slate-700/50 my-4">
                   <div className="flex justify-between items-center mb-3">
                     <span className="text-xs text-slate-300 font-medium">Biểu đồ tăng trưởng danh mục (30 ngày)</span>
@@ -203,7 +193,7 @@ export default function TradingHubLanding() {
         </div>
       </section>
 
-      {/* SECTION 3 — NỖI ĐAU KHÁCH HÀNG */}
+      {/* NỖI ĐAU */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
@@ -236,7 +226,7 @@ export default function TradingHubLanding() {
         </div>
       </section>
 
-      {/* SECTION 4 — DASHBOARD TẬP TRUNG */}
+      {/* DASHBOARD PREVIEW */}
       <section id="dashboard-preview" className="py-20 bg-slate-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
@@ -244,7 +234,6 @@ export default function TradingHubLanding() {
             <p className="text-slate-400 mt-3">Giao diện quản lý trực quan được thiết kế tối ưu cho cả nhà đầu tư cá nhân và đội nhóm.</p>
           </div>
 
-          {/* Account Table Mockup */}
           <div className="bg-slate-800/80 rounded-2xl border border-slate-700 overflow-hidden shadow-2xl">
             <div className="p-4 sm:p-6 border-b border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
@@ -306,7 +295,7 @@ export default function TradingHubLanding() {
         </div>
       </section>
 
-      {/* SECTION 5 & 6 — BÁO CÁO & PHÂN TÍCH */}
+      {/* BÁO CÁO */}
       <section id="reports" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
@@ -322,7 +311,7 @@ export default function TradingHubLanding() {
               { title: "Toàn bộ lịch sử", desc: "Lưu trữ và truy xuất kết quả tích lũy trong phạm vi dữ liệu có sẵn." }
             ].map((report, idx) => (
               <div key={idx} className="bg-slate-50 border border-slate-200 p-6 rounded-2xl">
-                <BarChart3 className="text-blue-600 mb-4" size={28} />
+                <svg className="w-7 h-7 text-blue-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
                 <h3 className="font-semibold text-slate-900 mb-2">{report.title}</h3>
                 <p className="text-sm text-slate-600">{report.desc}</p>
               </div>
@@ -354,13 +343,14 @@ export default function TradingHubLanding() {
         </div>
       </section>
 
-      {/* SECTION 7 — QUẢN LÝ TRÊN ĐIỆN THOẠI */}
+      {/* MOBILE EXPERIENCE */}
       <section className="py-20 bg-slate-50 border-t border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             <div className="lg:col-span-6 space-y-6">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold">
-                <Smartphone size={14} /> Mobile First Experience
+                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg> 
+                Mobile First Experience
               </div>
               <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">
                 Toàn bộ dữ liệu giao dịch trong tầm tay.
@@ -369,9 +359,9 @@ export default function TradingHubLanding() {
                 Mở dashboard, kiểm tra số liệu và theo dõi các tài khoản mọi lúc, mọi nơi khi có kết nối Internet. Thiết kế tối ưu cho màn hình di động giúp trải nghiệm mượt mà, không bị tràn viền hay khó nhìn.
               </p>
               <ul className="space-y-3 text-slate-700 font-medium text-sm">
-                <li className="flex items-center gap-2"><CheckCircle2 className="text-blue-600" size={18} /> Giao diện responsive tự động thu phóng hoàn hảo</li>
-                <li className="flex items-center gap-2"><CheckCircle2 className="text-blue-600" size={18} /> Nhận thông báo tóm tắt kết quả theo ngày</li>
-                <li className="flex items-center gap-2"><CheckCircle2 className="text-blue-600" size={18} /> Thao tác chuyển đổi tài khoản cực kỳ nhanh chóng</li>
+                <li className="flex items-center gap-2"><span className="text-blue-600 font-bold">✓</span> Giao diện responsive tự động thu phóng hoàn hảo</li>
+                <li className="flex items-center gap-2"><span className="text-blue-600 font-bold">✓</span> Nhận thông báo tóm tắt kết quả theo ngày</li>
+                <li className="flex items-center gap-2"><span className="text-blue-600 font-bold">✓</span> Thao tác chuyển đổi tài khoản cực kỳ nhanh chóng</li>
               </ul>
             </div>
 
@@ -406,10 +396,10 @@ export default function TradingHubLanding() {
         </div>
       </section>
 
-      {/* SECTION 8 — KẾT NỐI NHIỀU SÀN */}
+      {/* KẾT NỐI SÀN */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center max-w-3xl">
-          <Globe className="text-blue-600 mx-auto mb-4" size={36} />
+          <svg className="w-9 h-9 text-blue-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
           <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Sẵn sàng mở rộng cùng hệ thống giao dịch của bạn.</h2>
           <p className="text-slate-600 mt-4 leading-relaxed">
             {BRAND_NAME} định hướng mở rộng khả năng tích hợp linh hoạt với nhiều nhà môi giới (broker) và nền tảng khác nhau. Các connector chính thức đang được phát triển theo lộ trình kỹ thuật minh bạch nhằm đảm bảo an toàn tuyệt đối cho tài khoản của người dùng.
@@ -417,7 +407,7 @@ export default function TradingHubLanding() {
         </div>
       </section>
 
-      {/* SECTION 9 — AI SỬ DỤNG SẢN PHẨM? (ĐỐI TƯỢNG) */}
+      {/* ĐỐI TƯỢNG SỬ DỤNG */}
       <section id="features" className="py-20 bg-slate-50 border-t border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
@@ -433,7 +423,7 @@ export default function TradingHubLanding() {
             ].map((target, idx) => (
               <div key={idx} className="bg-white border border-slate-200 p-8 rounded-2xl shadow-sm flex items-start gap-4">
                 <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 font-bold">
-                  <Users size={20} />
+                  👥
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 mb-1">{target.title}</h3>
@@ -445,13 +435,13 @@ export default function TradingHubLanding() {
         </div>
       </section>
 
-      {/* SECTION 10 — BẢO MẬT VÀ MINH BẠCH */}
+      {/* BẢO MẬT */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-slate-900 text-white rounded-3xl p-8 sm:p-12 shadow-xl border border-slate-800 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-7 space-y-4">
               <div className="inline-flex items-center gap-2 text-emerald-400 text-xs font-mono uppercase tracking-wider">
-                <ShieldCheck size={16} /> Nguyên tắc hoạt động
+                🛡️ Nguyên tắc hoạt động
               </div>
               <h2 className="text-2xl sm:text-3xl font-bold">Bảo mật thông tin & Minh bạch dữ liệu</h2>
               <p className="text-slate-400 text-sm leading-relaxed">
@@ -460,20 +450,20 @@ export default function TradingHubLanding() {
             </div>
             <div className="lg:col-span-5 space-y-3">
               <div className="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700/50 flex items-center gap-3 text-sm">
-                <Lock size={18} className="text-blue-400" /> Mã hóa dữ liệu lưu trữ & truyền tải
+                🔒 Mã hóa dữ liệu lưu trữ & truyền tải
               </div>
               <div className="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700/50 flex items-center gap-3 text-sm">
-                <RefreshCw size={18} className="text-blue-400" /> Ngắt kết nối và thu hồi quyền bất cứ lúc nào
+                🔄 Ngắt kết nối và thu hồi quyền bất cứ lúc nào
               </div>
               <div className="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700/50 flex items-center gap-3 text-sm">
-                <Database size={18} className="text-blue-400" /> Không lưu trữ mật khẩu giao dịch cấp độ Master
+                💾 Không lưu trữ mật khẩu giao dịch cấp độ Master
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* SECTION 11 — FAQ */}
+      {/* FAQ */}
       <section id="faq" className="py-20 bg-slate-50 border-t border-slate-200">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
@@ -498,7 +488,11 @@ export default function TradingHubLanding() {
                   className="w-full p-5 text-left font-semibold text-slate-900 flex justify-between items-center hover:bg-slate-50 transition"
                 >
                   {faq.q}
-                  {openFaq === idx ? <ChevronUp size={18} className="text-blue-600" /> : <ChevronDown size={18} className="text-slate-400" />}
+                  {openFaq === idx ? (
+                    <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7"/></svg>
+                  ) : (
+                    <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/></svg>
+                  )}
                 </button>
                 {openFaq === idx && (
                   <div className="px-5 pb-5 text-sm text-slate-600 leading-relaxed border-t border-slate-100 pt-3">
@@ -511,7 +505,7 @@ export default function TradingHubLanding() {
         </div>
       </section>
 
-      {/* SECTION 12 — FINAL CTA & FORM */}
+      {/* FINAL CTA & FORM */}
       <section id="cta-form" className="py-20 bg-white">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-gradient-to-br from-blue-900 to-slate-900 text-white rounded-3xl p-8 sm:p-12 shadow-2xl relative overflow-hidden">
@@ -522,7 +516,6 @@ export default function TradingHubLanding() {
 
             {formStatus === 'success' ? (
               <div className="bg-emerald-500/20 border border-emerald-500/40 p-6 rounded-2xl text-center text-emerald-200">
-                <CheckCircle2 size={40} className="mx-auto mb-2 text-emerald-400" />
                 <h3 className="font-bold text-lg text-white">Đăng ký thành công!</h3>
                 <p className="text-sm mt-1">Cảm ơn bạn đã quan tâm. Đội ngũ {BRAND_NAME} sẽ liên hệ hỗ trợ bạn trong thời gian sớm nhất.</p>
               </div>
@@ -599,7 +592,7 @@ export default function TradingHubLanding() {
         </div>
       </section>
 
-      {/* SECTION 13 — FOOTER */}
+      {/* FOOTER */}
       <footer className="bg-slate-900 text-slate-400 py-16 border-t border-slate-800 text-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
