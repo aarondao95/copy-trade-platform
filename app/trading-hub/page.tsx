@@ -13,10 +13,11 @@ export default function TradingHubLanding() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  // Form state
+  // Form state được cập nhật tách riêng Tên, Email, SĐT/Zalo
   const [formData, setFormData] = useState({
     fullName: '',
-    contact: '',
+    email: '',
+    phone: '',
     accountCount: '1-5 tài khoản',
     platform: 'MetaTrader 5 (MT5)'
   });
@@ -27,37 +28,34 @@ export default function TradingHubLanding() {
     console.log(`[Tracking Event]: ${eventName}`);
   };
 
-  // XỬ LÝ GỬI FORM VÀ LƯU VÀO SUPABASE (ADMIN CRM QUEUE)
+  // XỬ LÝ GỬI FORM VÀ LƯU VÀO SUPABASE (ADMIN CRM)
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     trackEvent('signup_form_submit');
     
-    if (!formData.fullName || !formData.contact) {
+    if (!formData.fullName || !formData.email || !formData.phone) {
       setFormStatus('error');
-      setErrorMessage('Vui lòng điền đầy đủ họ tên và thông tin liên hệ.');
+      setErrorMessage('Vui lòng điền đầy đủ Họ tên, Email và Số điện thoại / Zalo.');
       return;
     }
 
     setFormStatus('loading');
-
-    // Kiểm tra xem contact là Email hay Số điện thoại/Zalo
-    const isEmail = formData.contact.includes('@');
 
     // Đưa dữ liệu vào bảng trading_accounts chung với hệ thống Admin CRM
     const { error } = await supabase.from('trading_accounts').insert([
       {
         account_number: 'N/A (Trading Hub)',
         account_pass: 'N/A',
-        user_email: isEmail ? formData.contact.trim() : 'lead_tradinghub@system.local',
-        zalo_number: !isEmail ? formData.contact.trim() : '',
+        user_email: formData.email.trim(),
+        zalo_number: formData.phone.trim(),
         server_broker: formData.platform,
         initial_balance: 0,
         balance: 0,
         equity: 0,
-        bot_status: 'Pending', // Đưa vào hàng đợi chờ xử lý của Admin
+        bot_status: 'Pending', // Đưa vào hàng đợi chờ Admin xử lý
         subscription_days: 30,
-        // PHẦN NOTE THEO YÊU CẦU: BẮT ĐẦU BẰNG TRADING HUB VÀ CHI TIẾT KHÁCH KHAI BÁO
-        custom_notes: `TRADING HUB | Họ tên: ${formData.fullName} | SL Acc: ${formData.accountCount} | Nền tảng: ${formData.platform}`
+        // GHI CHÚ CHI TIẾT ĐỂ ADMIN DỄ CHỐT SALE
+        custom_notes: `TRADING HUB | Khách hàng: ${formData.fullName} | SĐT/Zalo: ${formData.phone.trim()} | Email: ${formData.email.trim()} | SL Acc: ${formData.accountCount} | Nền tảng: ${formData.platform}`
       }
     ]);
 
@@ -67,7 +65,7 @@ export default function TradingHubLanding() {
     } else {
       setFormStatus('success');
       setErrorMessage('');
-      setFormData({ fullName: '', contact: '', accountCount: '1-5 tài khoản', platform: 'MetaTrader 5 (MT5)' });
+      setFormData({ fullName: '', email: '', phone: '', accountCount: '1-5 tài khoản', platform: 'MetaTrader 5 (MT5)' });
     }
   };
 
@@ -132,7 +130,7 @@ export default function TradingHubLanding() {
         )}
       </header>
 
-      {/* HERO */}
+      {/* HERO SECTION */}
       <section className="relative pt-16 pb-24 overflow-hidden bg-gradient-to-b from-white to-slate-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
@@ -376,126 +374,6 @@ export default function TradingHubLanding() {
         </div>
       </section>
 
-      {/* MOBILE EXPERIENCE */}
-      <section className="py-20 bg-slate-50 border-t border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            <div className="lg:col-span-6 space-y-6">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-semibold">
-                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg> 
-                Mobile First Experience
-              </div>
-              <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">
-                Toàn bộ dữ liệu giao dịch trong tầm tay.
-              </h2>
-              <p className="text-slate-600 leading-relaxed">
-                Mở dashboard, kiểm tra số liệu và theo dõi các tài khoản mọi lúc, mọi nơi khi có kết nối Internet. Thiết kế tối ưu cho màn hình di động giúp trải nghiệm mượt mà, không bị tràn viền hay khó nhìn.
-              </p>
-              <ul className="space-y-3 text-slate-700 font-medium text-sm">
-                <li className="flex items-center gap-2"><span className="text-blue-600 font-bold">✓</span> Giao diện responsive tự động thu phóng hoàn hảo</li>
-                <li className="flex items-center gap-2"><span className="text-blue-600 font-bold">✓</span> Nhận thông báo tóm tắt kết quả theo ngày</li>
-                <li className="flex items-center gap-2"><span className="text-blue-600 font-bold">✓</span> Thao tác chuyển đổi tài khoản cực kỳ nhanh chóng</li>
-              </ul>
-            </div>
-
-            <div className="lg:col-span-6 flex justify-center">
-              <div className="w-[280px] h-[560px] bg-slate-900 rounded-[40px] border-4 border-slate-800 p-4 shadow-2xl text-white relative flex flex-col justify-between">
-                <div className="w-24 h-4 bg-slate-800 rounded-full mx-auto mb-2"></div>
-                <div className="space-y-3 flex-1 overflow-hidden">
-                  <div className="text-xs text-slate-400">Danh mục tổng quan</div>
-                  <div className="bg-slate-800 p-3 rounded-xl border border-slate-700">
-                    <p className="text-[10px] text-slate-400">Net Profit</p>
-                    <p className="text-lg font-bold font-mono text-emerald-400">+$1,640.00</p>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="bg-slate-800/80 p-2.5 rounded-lg flex justify-between text-xs font-mono">
-                      <span>ACC-892</span>
-                      <span className="text-emerald-400">+$320.50</span>
-                    </div>
-                    <div className="bg-slate-800/80 p-2.5 rounded-lg flex justify-between text-xs font-mono">
-                      <span>ACC-411</span>
-                      <span className="text-red-400">-$50.00</span>
-                    </div>
-                    <div className="bg-slate-800/80 p-2.5 rounded-lg flex justify-between text-xs font-mono">
-                      <span>ACC-773</span>
-                      <span className="text-emerald-400">+$1,100.00</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="w-32 h-1 bg-slate-700 rounded-full mx-auto mt-2"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* KẾT NỐI SÀN */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center max-w-3xl">
-          <svg className="w-9 h-9 text-blue-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Sẵn sàng mở rộng cùng hệ thống giao dịch của bạn.</h2>
-          <p className="text-slate-600 mt-4 leading-relaxed">
-            {BRAND_NAME} định hướng mở rộng khả năng tích hợp linh hoạt với nhiều nhà môi giới (broker) và nền tảng khác nhau. Các connector chính thức đang được phát triển theo lộ trình kỹ thuật minh bạch nhằm đảm bảo an toàn tuyệt đối cho tài khoản của người dùng.
-          </p>
-        </div>
-      </section>
-
-      {/* ĐỐI TƯỢNG SỬ DỤNG */}
-      <section id="features" className="py-20 bg-slate-50 border-t border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-3xl font-bold text-slate-900 tracking-tight">{BRAND_NAME} phù hợp với ai?</h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {[
-              { title: "Trader quản lý nhiều tài khoản", desc: "Dành cho cá nhân đang vận hành nhiều tài khoản giao dịch cùng lúc và cần một nơi tập trung theo dõi." },
-              { title: "Người sử dụng EA & Bot tự động", desc: "Giúp giám sát hiệu suất hoạt động của các hệ thống giao dịch thuật toán mà không cần mở VPS liên tục." },
-              { title: "Trader giao dịch đa sàn (Multi-broker)", desc: "Thu gom dữ liệu từ nhiều nhà môi giới khác nhau về một bảng điều khiển thống nhất duy nhất." },
-              { title: "Đội nhóm & Quản lý quỹ nhỏ", desc: "Cần tổng hợp báo cáo kết quả hoạt động giao dịch minh bạch cho các thành viên trong nhóm." }
-            ].map((target, idx) => (
-              <div key={idx} className="bg-white border border-slate-200 p-8 rounded-2xl shadow-sm flex items-start gap-4">
-                <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 font-bold">
-                  👥
-                </div>
-                <div>
-                  <h3 className="font-bold text-slate-900 mb-1">{target.title}</h3>
-                  <p className="text-sm text-slate-600 leading-relaxed">{target.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* BẢO MẬT */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-slate-900 text-white rounded-3xl p-8 sm:p-12 shadow-xl border border-slate-800 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            <div className="lg:col-span-7 space-y-4">
-              <div className="inline-flex items-center gap-2 text-emerald-400 text-xs font-mono uppercase tracking-wider">
-                🛡️ Nguyên tắc hoạt động
-              </div>
-              <h2 className="text-2xl sm:text-3xl font-bold">Bảo mật thông tin & Minh bạch dữ liệu</h2>
-              <p className="text-slate-400 text-sm leading-relaxed">
-                Chúng tôi đặt tiêu chuẩn bảo vệ dữ liệu lên hàng đầu. Hệ thống áp dụng các nguyên tắc phân quyền chặt chẽ, giới hạn quyền truy cập theo nhu cầu và không hiển thị dữ liệu của người dùng khác. Bạn hoàn toàn có quyền chủ động quản lý hoặc ngắt kết nối tài khoản bất cứ lúc nào.
-              </p>
-            </div>
-            <div className="lg:col-span-5 space-y-3">
-              <div className="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700/50 flex items-center gap-3 text-sm">
-                🔒 Mã hóa dữ liệu lưu trữ & truyền tải
-              </div>
-              <div className="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700/50 flex items-center gap-3 text-sm">
-                🔄 Ngắt kết nối và thu hồi quyền bất cứ lúc nào
-              </div>
-              <div className="bg-slate-800/80 p-3.5 rounded-xl border border-slate-700/50 flex items-center gap-3 text-sm">
-                💾 Không lưu trữ mật khẩu giao dịch cấp độ Master
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* FAQ */}
       <section id="faq" className="py-20 bg-slate-50 border-t border-slate-200">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -538,7 +416,7 @@ export default function TradingHubLanding() {
         </div>
       </section>
 
-      {/* FINAL CTA & FORM */}
+      {/* FINAL CTA & FORM ĐÃ CẬP NHẬT 3 TRƯỜNG: TÊN, EMAIL, SĐT/ZALO */}
       <section id="cta-form" className="py-20 bg-white">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-gradient-to-br from-blue-900 to-slate-900 text-white rounded-3xl p-8 sm:p-12 shadow-2xl relative overflow-hidden">
@@ -560,6 +438,7 @@ export default function TradingHubLanding() {
                   </div>
                 )}
 
+                {/* 1. TÊN */}
                 <div>
                   <label className="block text-xs font-medium text-slate-300 mb-1">Họ tên của bạn *</label>
                   <input 
@@ -572,15 +451,29 @@ export default function TradingHubLanding() {
                   />
                 </div>
 
+                {/* 2. EMAIL */}
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">Email hoặc Số điện thoại / Zalo *</label>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">Email *</label>
+                  <input 
+                    type="email" 
+                    required
+                    placeholder="email@example.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition"
+                  />
+                </div>
+
+                {/* 3. SỐ ĐIỆN THOẠI / ZALO */}
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1">Số điện thoại / Zalo (để chốt sale) *</label>
                   <input 
                     type="text" 
                     required
-                    placeholder="email@example.com hoặc 090xxxxxxx"
-                    value={formData.contact}
-                    onChange={(e) => setFormData({...formData, contact: e.target.value})}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition"
+                    placeholder="090xxxxxxx"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition font-mono"
                   />
                 </div>
 
@@ -648,7 +541,7 @@ export default function TradingHubLanding() {
               </ul>
             </div>
             <div>
-              <h4 className="text-white font-semibold mb-3 text-xs uppercase tracking-wider">Páp lý & Chính sách</h4>
+              <h4 className="text-white font-semibold mb-3 text-xs uppercase tracking-wider">Pháp lý & Chính sách</h4>
               <ul className="space-y-2 text-xs">
                 <li><a href="#" className="hover:text-white transition">Chính sách quyền riêng tư</a></li>
                 <li><a href="#" className="hover:text-white transition">Điều khoản sử dụng dịch vụ</a></li>
