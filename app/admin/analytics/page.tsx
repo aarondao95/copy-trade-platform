@@ -77,31 +77,32 @@ export default function AdminAnalyticsDashboard() {
 
   // --- TÍNH TOÁN DỮ LIỆU TOÀN HỆ THỐNG ---
   const totalAccounts = accounts.length;
-  const activeRunningAccounts = accounts.filter(acc => acc.bot_status === 'Running').length;
-  const totalBalance = accounts.reduce((acc, curr) => acc + Number(curr.balance || 0), 0);
+  const activeRunningAccounts = accounts.filter((acc: any) => acc.bot_status === 'Running').length;
+  const totalBalance = accounts.reduce((acc: number, curr: any) => acc + Number(curr.balance || 0), 0);
 
   // Lọc tài khoản đang chọn
   const currentSelectedAccount = selectedAccountId === 'all' 
     ? null 
-    : accounts.find(acc => String(acc.id) === selectedAccountId);
+    : accounts.find((acc: any) => String(acc.id) === selectedAccountId);
 
-  const displayBalance = currentSelectedAccount ? Number(currentSelectedAccount.balance || 0) : totalBalance;
-  const displayEquity = currentSelectedAccount ? Number(currentSelectedAccount.equity || currentSelectedAccount.balance || 0) : accounts.reduce((acc, curr) => acc + Number(curr.equity || curr.balance || 0), 0);
-  const displayInitial = currentSelectedAccount ? Number(currentSelectedAccount.initial_balance || currentSelectedAccount.balance || 0) : accounts.reduce((acc, curr) => acc + Number(curr.initial_balance || curr.balance || 0), 0);
+  const displayBalance = currentSelectedAccount ? Number((currentSelectedAccount as any).balance || 0) : totalBalance;
+  const displayEquity = currentSelectedAccount ? Number((currentSelectedAccount as any).equity || (currentSelectedAccount as any).balance || 0) : accounts.reduce((acc: number, curr: any) => acc + Number(curr.equity || curr.balance || 0), 0);
+  const displayInitial = currentSelectedAccount ? Number((currentSelectedAccount as any).initial_balance || (currentSelectedAccount as any).balance || 0) : accounts.reduce((acc: number, curr: any) => acc + Number(curr.initial_balance || curr.balance || 0), 0);
   const displayProfit = displayBalance - displayInitial;
   const displayProfitPercent = displayInitial > 0 ? (displayProfit / displayInitial) * 100 : 0;
-  const displayLots = currentSelectedAccount ? Number(currentSelectedAccount.total_lots || 2.4) : accounts.reduce((acc, curr) => acc + Number(curr.total_lots || 12.5), 0);
+  const displayLots = currentSelectedAccount ? Number((currentSelectedAccount as any).total_lots || 2.4) : accounts.reduce((acc: number, curr: any) => acc + Number(curr.total_lots || 12.5), 0);
 
-  // Khai báo kiểu tường minh chống lỗi TypeScript
-  let bestAccount: { 
-    account_number: string; 
-    initial_balance: number; 
-    balance: number; 
-    custom_notes: string; 
-    user_email: string; 
-    profit: number 
-  } | null = null;
-  
+  // Khởi tạo kiểu dữ liệu tường minh tránh lỗi never của TypeScript
+  type BestAccount = {
+    account_number: string;
+    initial_balance: number;
+    balance: number;
+    custom_notes: string;
+    user_email: string;
+    profit: number;
+  };
+
+  let bestAccount: BestAccount | null = null;
   let maxProfit = -Infinity;
   
   accounts.forEach((acc: any) => {
@@ -121,9 +122,8 @@ export default function AdminAnalyticsDashboard() {
     }
   });
 
-  const sortedByBalance = [...accounts].sort((a, b) => Number(b.balance || 0) - Number(a.balance || 0));
+  const sortedByBalance = [...accounts].sort((a: any, b: any) => Number(b.balance || 0) - Number(a.balance || 0));
   const topAccountsForChart = sortedByBalance.slice(0, 4);
-  const otherBalanceSum = sortedByBalance.slice(4).reduce((acc, curr) => acc + Number(curr.balance || 0), 0);
 
   return (
     <main className="min-h-screen bg-gray-950 text-gray-100 p-6 md:p-10">
@@ -175,7 +175,7 @@ export default function AdminAnalyticsDashboard() {
               <div className="bg-blue-950/40 border border-blue-800/60 p-4 rounded-xl flex flex-col sm:flex-row justify-between items-center gap-4 text-sm">
                 <div className="flex items-center gap-3">
                   <span className="w-3 h-3 rounded-full bg-blue-400 animate-pulse"></span>
-                  <span>Đang xem chi tiết tài khoản: <strong className="text-white font-mono text-base">ID {currentSelectedAccount.account_number}</strong> của khách hàng <span className="text-blue-400 font-semibold">{currentSelectedAccount.user_email}</span></span>
+                  <span>Đang xem chi tiết tài khoản: <strong className="text-white font-mono text-base">ID {(currentSelectedAccount as any).account_number}</strong> của khách hàng <span className="text-blue-400 font-semibold">{(currentSelectedAccount as any).user_email}</span></span>
                 </div>
                 <button 
                   onClick={() => setSelectedAccountId('all')} 
@@ -191,7 +191,7 @@ export default function AdminAnalyticsDashboard() {
               <div className="bg-gray-900 border border-gray-800 p-5 rounded-2xl shadow-lg">
                 <div className="text-xs text-gray-400 font-medium">{currentSelectedAccount ? 'Trạng thái Bot' : 'Tổng Tài Khoản'}</div>
                 <div className="text-2xl font-black text-white mt-1 font-mono">
-                  {currentSelectedAccount ? (currentSelectedAccount.bot_status || 'Pending') : totalAccounts} 
+                  {currentSelectedAccount ? ((currentSelectedAccount as any).bot_status || 'Pending') : totalAccounts} 
                   {!currentSelectedAccount && <span className="text-xs text-green-400 font-normal"> ({activeRunningAccounts} Running)</span>}
                 </div>
               </div>
@@ -222,7 +222,7 @@ export default function AdminAnalyticsDashboard() {
                 <div className="flex justify-between items-center mb-6">
                   <div>
                     <h3 className="text-lg font-bold text-white">📈 Biểu Đồ Hiệu Suất Tăng Trưởng (30 Ngày)</h3>
-                    <p className="text-xs text-gray-400">{currentSelectedAccount ? `Biến động tài sản của tài khoản ${currentSelectedAccount.account_number}` : 'Biến động số dư tổng thể toàn bộ danh mục'}</p>
+                    <p className="text-xs text-gray-400">{currentSelectedAccount ? `Biến động tài sản của tài khoản ${(currentSelectedAccount as any).account_number}` : 'Biến động số dư tổng thể toàn bộ danh mục'}</p>
                   </div>
                   <span className="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-lg font-mono font-bold">
                     Real-time Sync
@@ -255,13 +255,13 @@ export default function AdminAnalyticsDashboard() {
 
                   {currentSelectedAccount ? (
                     <div className="bg-gray-950 border border-gray-800 p-5 rounded-xl space-y-3 font-mono text-xs shadow-inner">
-                      <div><span className="text-gray-500">Email khách:</span> <span className="text-blue-400">{currentSelectedAccount.user_email}</span></div>
-                      <div><span className="text-gray-500">Số Zalo/SĐT:</span> <span className="text-green-400 font-bold">{currentSelectedAccount.zalo_number || 'Chưa có'}</span></div>
-                      <div><span className="text-gray-500">Broker / Server:</span> <span className="text-white">{currentSelectedAccount.server_broker}</span></div>
-                      <div><span className="text-gray-500">Gói thuê bao:</span> <span className="text-yellow-400">{currentSelectedAccount.subscription_days} ngày</span></div>
+                      <div><span className="text-gray-500">Email khách:</span> <span className="text-blue-400">{(currentSelectedAccount as any).user_email}</span></div>
+                      <div><span className="text-gray-500">Số Zalo/SĐT:</span> <span className="text-green-400 font-bold">{(currentSelectedAccount as any).zalo_number || 'Chưa có'}</span></div>
+                      <div><span className="text-gray-500">Broker / Server:</span> <span className="text-white">{(currentSelectedAccount as any).server_broker}</span></div>
+                      <div><span className="text-gray-500">Gói thuê bao:</span> <span className="text-yellow-400">{(currentSelectedAccount as any).subscription_days} ngày</span></div>
                       <div className="pt-2 border-t border-gray-800">
                         <span className="text-gray-500 block mb-1">Ghi chú nội bộ:</span>
-                        <span className="text-yellow-400 font-sans">{currentSelectedAccount.custom_notes || 'Không có ghi chú'}</span>
+                        <span className="text-yellow-400 font-sans">{(currentSelectedAccount as any).custom_notes || 'Không có ghi chú'}</span>
                       </div>
                     </div>
                   ) : bestAccount ? (
@@ -352,10 +352,10 @@ export default function AdminAnalyticsDashboard() {
                     <div className="space-y-1.5">
                       <div className="flex justify-between text-xs font-mono">
                         <span className="text-yellow-400 font-bold">Chờ xử lý (Pending)</span>
-                        <span className="text-white font-bold">{accounts.filter(a => a.bot_status === 'Pending').length} / {totalAccounts}</span>
+                        <span className="text-white font-bold">{accounts.filter((a: any) => a.bot_status === 'Pending').length} / {totalAccounts}</span>
                       </div>
                       <div className="w-full bg-gray-950 h-2.5 rounded-full overflow-hidden border border-gray-800">
-                        <div className="bg-yellow-500 h-full rounded-full" style={{ width: `${totalAccounts > 0 ? (accounts.filter(a => a.bot_status === 'Pending').length / totalAccounts) * 100 : 0}%` }}></div>
+                        <div className="bg-yellow-500 h-full rounded-full" style={{ width: `${totalAccounts > 0 ? (accounts.filter((a: any) => a.bot_status === 'Pending').length / totalAccounts) * 100 : 0}%` }}></div>
                       </div>
                     </div>
                   </div>
