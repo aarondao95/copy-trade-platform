@@ -15,7 +15,7 @@ export default function AdminAnalyticsDashboard() {
   const [accounts, setAccounts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // STATE MỚI: Lựa chọn xem toàn hệ thống hay chi tiết 1 tài khoản (Chọn theo ID)
+  // Lựa chọn xem toàn hệ thống hay chi tiết 1 tài khoản
   const [selectedAccountId, setSelectedAccountId] = useState<string>('all');
 
   useEffect(() => {
@@ -75,33 +75,41 @@ export default function AdminAnalyticsDashboard() {
     );
   }
 
-  // --- LỌC DỮ LIỆU DỰA TRÊN LỰA CHỌN CỦA ADMIN ---
+  // --- TÍNH TOÁN DỮ LIỆU TOÀN HỆ THỐNG ---
+  const totalAccounts = accounts.length;
+  const activeRunningAccounts = accounts.filter(acc => acc.bot_status === 'Running').length;
+  const totalBalance = accounts.reduce((acc, curr) => acc + Number(curr.balance || 0), 0);
+
+  // Lọc tài khoản đang chọn
   const currentSelectedAccount = selectedAccountId === 'all' 
     ? null 
     : accounts.find(acc => String(acc.id) === selectedAccountId);
 
-  // Nếu chọn 1 tài khoản cụ thể thì tính toán cho riêng tài khoản đó, ngược lại tính cho toàn hệ thống
-  const totalAccounts = accounts.length;
-  const activeRunningAccounts = accounts.filter(acc => acc.bot_status === 'Running').length;
-  
-  const displayBalance = currentSelectedAccount ? Number(currentSelectedAccount.balance || 0) : accounts.reduce((acc, curr) => acc + Number(curr.balance || 0), 0);
+  const displayBalance = currentSelectedAccount ? Number(currentSelectedAccount.balance || 0) : totalBalance;
   const displayEquity = currentSelectedAccount ? Number(currentSelectedAccount.equity || currentSelectedAccount.balance || 0) : accounts.reduce((acc, curr) => acc + Number(curr.equity || curr.balance || 0), 0);
   const displayInitial = currentSelectedAccount ? Number(currentSelectedAccount.initial_balance || currentSelectedAccount.balance || 0) : accounts.reduce((acc, curr) => acc + Number(curr.initial_balance || curr.balance || 0), 0);
   const displayProfit = displayBalance - displayInitial;
   const displayProfitPercent = displayInitial > 0 ? (displayProfit / displayInitial) * 100 : 0;
-
   const displayLots = currentSelectedAccount ? Number(currentSelectedAccount.total_lots || 2.4) : accounts.reduce((acc, curr) => acc + Number(curr.total_lots || 12.5), 0);
 
-  // Tài khoản lợi nhuận tốt nhất (chỉ tính khi xem toàn hệ thống)
-  let bestAccount = null;
+  // Tìm tài khoản lợi nhuận tốt nhất với định nghĩa kiểu tường minh
+  let bestAccount: { account_number: string; initial_balance: number; balance: number; custom_notes: string; user_email: string; profit: number } | null = null;
   let maxProfit = -Infinity;
-  accounts.forEach(acc => {
+  
+  accounts.forEach((acc) => {
     const init = Number(acc.initial_balance || acc.balance || 0);
     const bal = Number(acc.balance || 0);
     const profit = bal - init;
     if (profit > maxProfit) {
       maxProfit = profit;
-      bestAccount = { ...acc, profit };
+      bestAccount = {
+        account_number: acc.account_number,
+        initial_balance: init,
+        balance: bal,
+        custom_notes: acc.custom_notes,
+        user_email: acc.user_email,
+        profit: profit
+      };
     }
   });
 
@@ -123,7 +131,6 @@ export default function AdminAnalyticsDashboard() {
             <p className="text-xs text-gray-400 mt-1">Xem tổng quan toàn hệ thống hoặc chọn riêng tài khoản của từng khách hàng.</p>
           </div>
 
-          {/* DROPDOWN LỰA CHỌN TÀI KHOẢN KHÁCH HÀNG */}
           <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
             <div className="w-full sm:w-72">
               <label className="block text-[10px] text-gray-400 mb-1 font-mono uppercase tracking-wider">Chọn tài khoản khách hàng:</label>
@@ -156,7 +163,6 @@ export default function AdminAnalyticsDashboard() {
           <div className="text-center py-20 text-gray-500 font-mono">Đang tổng hợp dữ liệu...</div>
         ) : (
           <>
-            {/* THÔNG BÁO ĐANG XEM CHI TIẾT TÀI KHOẢN NÀO */}
             {currentSelectedAccount && (
               <div className="bg-blue-950/40 border border-blue-800/60 p-4 rounded-xl flex flex-col sm:flex-row justify-between items-center gap-4 text-sm">
                 <div className="flex items-center gap-3">
@@ -204,7 +210,6 @@ export default function AdminAnalyticsDashboard() {
             {/* 2. BIỂU ĐỒ & THÔNG TIN CHI TIẾT */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               
-              {/* Biểu đồ tăng trưởng */}
               <div className="lg:col-span-2 bg-gray-900 border border-gray-800 p-6 rounded-2xl shadow-xl flex flex-col justify-between">
                 <div className="flex justify-between items-center mb-6">
                   <div>
@@ -232,7 +237,6 @@ export default function AdminAnalyticsDashboard() {
                 </div>
               </div>
 
-              {/* Thông tin chi tiết khách hàng hoặc Top tài khoản */}
               <div className="bg-gray-900 border border-gray-800 p-6 rounded-2xl shadow-xl flex flex-col justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-4">
@@ -289,7 +293,7 @@ export default function AdminAnalyticsDashboard() {
 
             </div>
 
-            {/* 3. BIỂU ĐỒ TRÒN PHÂN BỔ VỐN (CHỈ HIỂN THỊ KHI Ở CHẾ ĐỘ TOÀN HỆ THỐNG) */}
+            {/* 3. BIỂU ĐỒ TRÒN PHÂN BỔ VỐN */}
             {!currentSelectedAccount && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 
