@@ -92,22 +92,30 @@ export default function AdminAnalyticsDashboard() {
   const displayProfitPercent = displayInitial > 0 ? (displayProfit / displayInitial) * 100 : 0;
   const displayLots = currentSelectedAccount ? Number(currentSelectedAccount.total_lots || 2.4) : accounts.reduce((acc, curr) => acc + Number(curr.total_lots || 12.5), 0);
 
-  // Tìm tài khoản lợi nhuận tốt nhất với định nghĩa kiểu tường minh
-  let bestAccount: { account_number: string; initial_balance: number; balance: number; custom_notes: string; user_email: string; profit: number } | null = null;
+  // Khai báo kiểu tường minh chống lỗi TypeScript
+  let bestAccount: { 
+    account_number: string; 
+    initial_balance: number; 
+    balance: number; 
+    custom_notes: string; 
+    user_email: string; 
+    profit: number 
+  } | null = null;
+  
   let maxProfit = -Infinity;
   
-  accounts.forEach((acc) => {
+  accounts.forEach((acc: any) => {
     const init = Number(acc.initial_balance || acc.balance || 0);
     const bal = Number(acc.balance || 0);
     const profit = bal - init;
     if (profit > maxProfit) {
       maxProfit = profit;
       bestAccount = {
-        account_number: acc.account_number,
+        account_number: acc.account_number || 'N/A',
         initial_balance: init,
         balance: bal,
-        custom_notes: acc.custom_notes,
-        user_email: acc.user_email,
+        custom_notes: acc.custom_notes || '',
+        user_email: acc.user_email || '',
         profit: profit
       };
     }
@@ -140,7 +148,7 @@ export default function AdminAnalyticsDashboard() {
                 className="w-full bg-gray-950 border border-blue-500/50 rounded-xl px-3 py-2.5 text-sm text-white outline-none font-semibold focus:border-blue-400"
               >
                 <option value="all">🌐 Tổng quan toàn hệ thống (All Accounts)</option>
-                {accounts.map(acc => (
+                {accounts.map((acc: any) => (
                   <option key={acc.id} value={String(acc.id)}>
                     ID: {acc.account_number} — {acc.custom_notes ? acc.custom_notes.split('|')[0] : acc.user_email}
                   </option>
@@ -304,7 +312,7 @@ export default function AdminAnalyticsDashboard() {
                   </div>
 
                   <div className="space-y-4">
-                    {topAccountsForChart.map((acc, index) => {
+                    {topAccountsForChart.map((acc: any, index: number) => {
                       const balance = Number(acc.balance || 0);
                       const percentage = totalBalance > 0 ? ((balance / totalBalance) * 100).toFixed(1) : 0;
                       const colors = ['bg-blue-500', 'bg-cyan-500', 'bg-purple-500', 'bg-emerald-500'];
