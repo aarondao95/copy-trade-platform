@@ -8,7 +8,6 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// 1. Định nghĩa Interface chuẩn xác cho dữ liệu tài khoản để TypeScript không bao giờ báo lỗi
 interface TradingAccount {
   id: number | string;
   account_number: string;
@@ -34,12 +33,23 @@ interface BestAccountResult extends TradingAccount {
   profitPercent: number;
 }
 
+interface ClientEmailGroup {
+  emailKey: string;
+  displayEmail: string;
+  count: number;
+  totalBalance: number;
+  zalo: string;
+}
+
 export default function AdminAnalyticsDashboard() {
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState<boolean>(false);
   const [adminPasscode, setAdminPasscode] = useState<string>('');
 
   const [accounts, setAccounts] = useState<TradingAccount[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+
+  // BỘ LỌC KÉP: Cấp 1 theo Email Khách hàng -> Cấp 2 theo từng Tài khoản trong Email đó
+  const [selectedEmail, setSelectedEmail] = useState<string>('all');
   const [selectedAccountId, setSelectedAccountId] = useState<string>('all');
 
   useEffect(() => {
@@ -73,7 +83,7 @@ export default function AdminAnalyticsDashboard() {
         id: item.id,
         account_number: String(item.account_number || 'N/A'),
         account_pass: String(item.account_pass || ''),
-        user_email: String(item.user_email || ''),
+        user_email: String(item.user_email || 'chua_co_email@system.local').trim(),
         zalo_number: String(item.zalo_number || ''),
         server_broker: String(item.server_broker || 'Chưa cập nhật'),
         broker: String(item.broker || ''),
@@ -122,94 +132,103 @@ export default function AdminAnalyticsDashboard() {
     );
   }
 
-  // --- 2. TÍNH TOÁN LOGIC BẰNG .REDUCE() (LOẠI BỎ HOÀN TOÀN LỖI TYPE 'NEVER') ---
-  const totalAccounts = accounts.length;
-  const runningCount = accounts.filter((a) => a.bot_status === 'Running').length;
-  const pendingCount = accounts.filter((a) => a.bot_status === 'Pending').length;
-  const otherStatusCount = Math.max(0, totalAccounts - runningCount - pendingCount);
+  // --- 1. GOM NHÓM TÀI KHOẢN THEO EMAIL KHÁCH HÀNG ---
+  const emailGroups: ClientEmailGroup[] = accounts.reduce<ClientEmailGroup[]>((groups, acc) => {
+    const key = acc.user_email.toLowerCase();
+    const existing = groups.find((g) => g.emailKey === key);
+    if (existing) {
+      existing.count += 1;
+      existing.totalBalance += acc.balance;
+      if (!existing.zalo && acc.zalo_number) existing.zalo = acc.zalo_number;
+    } else {
+      groups.push({
+        emailKey: key,
+        displayEmail: acc.user_email,
+        count: 1,
+        totalBalance: acc.balance,
+        zalo: acc.zalo_number || '',
+      });
+    }
+    return groups;
+  }, []);
 
-  const totalSystemBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
-  const totalSystemEquity = accounts.reduce((sum, acc) => sum + acc.equity, 0);
-  const totalSystemInitial = accounts.reduce((sum, acc) => sum + acc.initial_balance, 0);
-  const totalSystemLots = accounts.reduce((sum, acc) => sum + (acc.total_lots || 0), 0);
+  // Danh sách các tài khoản thuộc Email đang chọn
+  const accountsBySelectedEmail: TradingAccount[] =
+    selectedEmail === 'all'
+      ? accounts
+      : accounts.filter((acc) => acc.user_email.toLowerCase() === selectedEmail);
 
-  // Tìm tài khoản đang được lọc (nếu có)
-  const currentSelectedAccount: TradingAccount | null =
+  // Danh sách các tài khoản thực tế dùng để tính toán Dashboard (Lọc thêm theo ID nếu chọn)
+  const scopedAccounts: TradingAccount[] =
     selectedAccountId === 'all'
-      ? null
-      : accounts.find((acc) => String(acc.id) === selectedAccountId) || null;
+      ? accountsBySelectedEmail
+      : accountsBySelectedEmail.filter((acc) => String(acc.id) === selectedAccountId);
 
-  // Số liệu hiển thị trên Top Cards (Tự động đổi theo chế độ Toàn hệ thống hoặc 1 tài khoản)
-  const displayBalance = currentSelectedAccount ? currentSelectedAccount.balance : totalSystemBalance;
-  const displayEquity = currentSelectedAccount ? currentSelectedAccount.equity : totalSystemEquity;
-  const displayInitial = currentSelectedAccount ? currentSelectedAccount.initial_balance : totalSystemInitial;
+  // --- 2. TÍNH TOÁN CHỈ SỐ TRÊN TẬP DỮ LIỆU ĐANG LỌC (SCOPED ACCOUNTS) ---
+  const scopedTotalAccounts = scopedAccounts.length;
+  const runningCount = scopedAccounts.filter((a) => a.bot_status === 'Running').length;
+  const pendingCount = scopedAccounts.filter((a) => a.bot_status === 'Pending').length;
+  const otherStatusCount = Math.max(0, scopedTotalAccounts - runningCount - pendingCount);
+
+  const displayBalance = scopedAccounts.reduce((sum, acc) => sum + acc.balance, 0);
+  const displayEquity = scopedAccounts.reduce((sum, acc) => sum + acc.equity, 0);
+  const displayInitial = scopedAccounts.reduce((sum, acc) => sum + acc.initial_balance, 0);
   const displayProfit = displayBalance - displayInitial;
   const displayProfitPercent = displayInitial > 0 ? (displayProfit / displayInitial) * 100 : 0;
-  const displayLots = currentSelectedAccount ? (currentSelectedAccount.total_lots || 0) : totalSystemLots;
+  const displayLots = scopedAccounts.reduce((sum, acc) => sum + (acc.total_lots || 0), 0);
 
-  // Tìm tài khoản có lợi nhuận tốt nhất bằng .reduce() — TypeScript hiểu 100% kiểu dữ liệu trả về
-  const bestAccount: BestAccountResult | null = accounts.reduce<BestAccountResult | null>((best, acc) => {
-    const profit = acc.balance - acc.initial_balance;
-    const profitPercent = acc.initial_balance > 0 ? (profit / acc.initial_balance) * 100 : 0;
-    if (!best || profit > best.profit) {
-      return { ...acc, profit, profitPercent };
-    }
-    return best;
-  }, null);
+  // Tìm tài khoản lợi nhuận tốt nhất trong phạm vi đang lọc (Toàn hệ thống hoặc trong nhóm Email của khách)
+  const bestAccount: BestAccountResult | null = scopedAccounts.reduce<BestAccountResult | null>(
+    (best, acc) => {
+      const profit = acc.balance - acc.initial_balance;
+      const profitPercent = acc.initial_balance > 0 ? (profit / acc.initial_balance) * 100 : 0;
+      if (!best || profit > best.profit) {
+        return { ...acc, profit, profitPercent };
+      }
+      return best;
+    },
+    null
+  );
 
-  // Sắp xếp tài khoản theo vốn để vẽ biểu đồ tròn phân bổ vốn
-  const sortedByBalance = [...accounts].sort((a, b) => b.balance - a.balance);
+  // Sắp xếp tài khoản theo vốn để vẽ biểu đồ phân bổ vốn (của Toàn hệ thống hoặc của riêng Email đang chọn)
+  const sortedByBalance = [...scopedAccounts].sort((a, b) => b.balance - a.balance);
   const top4BalanceAccounts = sortedByBalance.slice(0, 4);
   const otherBalanceSum = sortedByBalance.slice(4).reduce((sum, acc) => sum + acc.balance, 0);
 
-  // Phân loại tài khoản Có lãi vs Đang âm để vẽ biểu đồ tròn lợi nhuận
-  const profitableAccounts = accounts.filter((acc) => acc.balance - acc.initial_balance > 0);
-  const losingOrBreakEvenAccounts = accounts.filter((acc) => acc.balance - acc.initial_balance <= 0);
+  // Phân loại tài khoản Có lãi vs Đang âm trong phạm vi đang lọc
+  const profitableAccounts = scopedAccounts.filter((acc) => acc.balance - acc.initial_balance > 0);
+  const losingOrBreakEvenAccounts = scopedAccounts.filter((acc) => acc.balance - acc.initial_balance <= 0);
   const totalPositiveProfit = profitableAccounts.reduce((sum, acc) => sum + (acc.balance - acc.initial_balance), 0);
-  const winAccountRate = totalAccounts > 0 ? Math.round((profitableAccounts.length / totalAccounts) * 100) : 0;
+  const winAccountRate = scopedTotalAccounts > 0 ? Math.round((profitableAccounts.length / scopedTotalAccounts) * 100) : 0;
 
-  // Tính góc cho Biểu đồ tròn Trạng thái tài khoản
-  const runningPercent = totalAccounts > 0 ? Math.round((runningCount / totalAccounts) * 100) : 0;
-  const pendingPercent = totalAccounts > 0 ? Math.round((pendingCount / totalAccounts) * 100) : 0;
+  // Tỷ lệ trạng thái tài khoản
+  const runningPercent = scopedTotalAccounts > 0 ? Math.round((runningCount / scopedTotalAccounts) * 100) : 0;
+  const pendingPercent = scopedTotalAccounts > 0 ? Math.round((pendingCount / scopedTotalAccounts) * 100) : 0;
+
+  // Thông tin nhóm khách hàng đang chọn (nếu lọc theo Email)
+  const currentClientGroup =
+    selectedEmail === 'all' ? null : emailGroups.find((g) => g.emailKey === selectedEmail) || null;
 
   return (
     <main className="min-h-screen bg-gray-950 text-gray-100 p-6 md:p-10">
       <div className="max-w-7xl mx-auto space-y-8">
         
-        {/* HEADER & THANH CHỌN TÀI KHOẢN */}
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 flex flex-col lg:flex-row justify-between items-center gap-6 shadow-xl">
-          <div>
-            <div className="flex items-center gap-3">
-              <span className="bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-md">
-                ADMIN ANALYTICS
-              </span>
-              <h1 className="text-2xl font-bold text-white">Trung Tâm Phân Tích Hiệu Suất</h1>
-            </div>
-            <p className="text-xs text-gray-400 mt-1">
-              Giám sát tăng trưởng, phân bổ vốn, khối lượng Lot và hiệu suất từng tài khoản.
-            </p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
-            <div className="w-full sm:w-80">
-              <label className="block text-[10px] text-gray-400 mb-1 font-mono uppercase tracking-wider">
-                Chế độ xem / Lọc theo tài khoản:
-              </label>
-              <select
-                value={selectedAccountId}
-                onChange={(e) => setSelectedAccountId(e.target.value)}
-                className="w-full bg-gray-950 border border-blue-500/50 rounded-xl px-3 py-2.5 text-sm text-white outline-none font-semibold focus:border-blue-400"
-              >
-                <option value="all">🌐 Toàn bộ hệ thống ({totalAccounts} tài khoản)</option>
-                {accounts.map((acc) => (
-                  <option key={String(acc.id)} value={String(acc.id)}>
-                    ID: {acc.account_number} — {acc.custom_notes ? acc.custom_notes.split('|')[0] : acc.user_email}
-                  </option>
-                ))}
-              </select>
+        {/* HEADER & BỘ LỌC KÉP: THEO EMAIL KHÁCH HÀNG & THEO TÀI KHOẢN */}
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 space-y-5 shadow-xl">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-800 pb-4">
+            <div>
+              <div className="flex items-center gap-3">
+                <span className="bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-md">
+                  ADMIN ANALYTICS
+                </span>
+                <h1 className="text-2xl font-bold text-white">Trung Tâm Phân Tích Hiệu Suất</h1>
+              </div>
+              <p className="text-xs text-gray-400 mt-1">
+                Lọc theo Email khách hàng để tổng hợp toàn bộ các tài khoản của khách đó, hoặc xem toàn hệ thống.
+              </p>
             </div>
 
-            <div className="flex items-center gap-2 pt-2 sm:pt-5 w-full sm:w-auto justify-end">
+            <div className="flex items-center gap-2 shrink-0">
               <Link
                 href="/admin"
                 className="bg-gray-800 hover:bg-gray-700 text-gray-300 px-4 py-2.5 rounded-xl text-sm font-semibold border border-gray-700 transition"
@@ -224,6 +243,54 @@ export default function AdminAnalyticsDashboard() {
               </button>
             </div>
           </div>
+
+          {/* KHU VỰC 2 DROPDOWN LỌC DỮ LIỆU */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* CẤP 1: CHỌN EMAIL KHÁCH HÀNG */}
+            <div>
+              <label className="block text-xs text-blue-400 font-bold mb-1.5 font-mono uppercase">
+                1. Lọc theo Email Khách hàng (Gom nhóm tài khoản):
+              </label>
+              <select
+                value={selectedEmail}
+                onChange={(e) => {
+                  setSelectedEmail(e.target.value);
+                  setSelectedAccountId('all'); // Reset bộ lọc tài khoản con khi đổi Email khách
+                }}
+                className="w-full bg-gray-950 border border-blue-500/60 rounded-xl px-3.5 py-3 text-sm text-white outline-none font-semibold focus:border-blue-400"
+              >
+                <option value="all">
+                  🌐 Toàn bộ hệ thống ({emailGroups.length} Khách hàng — {accounts.length} Tài khoản)
+                </option>
+                {emailGroups.map((group) => (
+                  <option key={group.emailKey} value={group.emailKey}>
+                    📧 {group.displayEmail} ({group.count} tài khoản — Tổng vốn: ${group.totalBalance.toLocaleString()})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* CẤP 2: CHỌN TÀI KHOẢN CỤ THỂ TRONG EMAIL ĐÓ */}
+            <div>
+              <label className="block text-xs text-gray-400 font-bold mb-1.5 font-mono uppercase">
+                2. Lọc chi tiết từng ID Tài khoản {selectedEmail !== 'all' ? 'của khách này' : ''}:
+              </label>
+              <select
+                value={selectedAccountId}
+                onChange={(e) => setSelectedAccountId(e.target.value)}
+                className="w-full bg-gray-950 border border-gray-800 rounded-xl px-3.5 py-3 text-sm text-white outline-none font-semibold focus:border-blue-400"
+              >
+                <option value="all">
+                  📊 Xem gộp tất cả ({accountsBySelectedEmail.length} tài khoản)
+                </option>
+                {accountsBySelectedEmail.map((acc) => (
+                  <option key={String(acc.id)} value={String(acc.id)}>
+                    ID: {acc.account_number} ({acc.server_broker}) — Số dư: ${acc.balance.toLocaleString()}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
         </div>
 
         {loading ? (
@@ -232,37 +299,47 @@ export default function AdminAnalyticsDashboard() {
           </div>
         ) : (
           <>
-            {/* BANNER THÔNG BÁO KHI ĐANG LỌC 1 TÀI KHOẢN */}
-            {currentSelectedAccount && (
-              <div className="bg-blue-950/40 border border-blue-800/60 p-4 rounded-xl flex flex-col sm:flex-row justify-between items-center gap-4 text-sm">
-                <div className="flex items-center gap-3">
-                  <span className="w-3 h-3 rounded-full bg-blue-400 animate-pulse"></span>
-                  <span>
-                    Đang phân tích riêng tài khoản:{' '}
-                    <strong className="text-white font-mono text-base">
-                      ID {currentSelectedAccount.account_number}
-                    </strong>{' '}
-                    ({currentSelectedAccount.user_email})
-                  </span>
+            {/* BANNER THÔNG BÁO KHI ĐANG LỌC THEO EMAIL KHÁCH HÀNG */}
+            {selectedEmail !== 'all' && currentClientGroup && (
+              <div className="bg-blue-950/40 border border-blue-800/60 p-4 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-sm">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-3 h-3 rounded-full bg-blue-400 animate-pulse"></span>
+                    <span>
+                      Đang xem dữ liệu tổng hợp của khách hàng:{' '}
+                      <strong className="text-blue-400 font-mono text-base">
+                        {currentClientGroup.displayEmail}
+                      </strong>
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-400 pl-5 font-mono">
+                    Tổng số tài khoản sở hữu: <strong className="text-white">{currentClientGroup.count} tài khoản</strong> | SĐT/Zalo:{' '}
+                    <strong className="text-emerald-400">{currentClientGroup.zalo || 'Chưa cập nhật'}</strong>
+                  </div>
                 </div>
                 <button
-                  onClick={() => setSelectedAccountId('all')}
-                  className="text-xs bg-blue-900/60 hover:bg-blue-800 text-blue-300 px-3 py-1.5 rounded-lg border border-blue-700 transition"
+                  onClick={() => {
+                    setSelectedEmail('all');
+                    setSelectedAccountId('all');
+                  }}
+                  className="text-xs bg-blue-900/60 hover:bg-blue-800 text-blue-300 px-3.5 py-2 rounded-lg border border-blue-700 transition shrink-0 font-semibold"
                 >
-                  ✕ Xem lại toàn hệ thống
+                  ✕ Quay lại Toàn hệ thống
                 </button>
               </div>
             )}
 
-            {/* 1. TOP SUMMARY CARDS */}
+            {/* 1. TOP SUMMARY CARDS (TỰ ĐỘNG CỘNG DỒN THEO NHÓM ĐANG LỌC) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
               <div className="bg-gray-900 border border-gray-800 p-5 rounded-2xl shadow-lg">
                 <div className="text-xs text-gray-400 font-medium">
-                  {currentSelectedAccount ? 'Trạng Thái Hoạt Động' : 'Tổng Tài Khoản'}
+                  {selectedAccountId !== 'all' ? 'Trạng Thái Tài Khoản' : 'Số Lượng Tài Khoản'}
                 </div>
                 <div className="text-2xl font-black text-white mt-1 font-mono">
-                  {currentSelectedAccount ? currentSelectedAccount.bot_status : totalAccounts}
-                  {!currentSelectedAccount && (
+                  {selectedAccountId !== 'all' && scopedAccounts[0]
+                    ? scopedAccounts[0].bot_status
+                    : `${scopedTotalAccounts} TK`}
+                  {selectedAccountId === 'all' && (
                     <span className="text-xs text-emerald-400 font-normal ml-2">
                       ({runningCount} Running)
                     </span>
@@ -304,7 +381,7 @@ export default function AdminAnalyticsDashboard() {
               </div>
             </div>
 
-            {/* 2. BIỂU ĐỒ TĂNG TRƯỞNG & TÀI KHOẢN TỐT NHẤT */}
+            {/* 2. BIỂU ĐỒ TĂNG TRƯỞNG & TÀI KHOẢN TỐT NHẤT TRONG NHÓM */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               
               {/* Biểu đồ tăng trưởng */}
@@ -312,14 +389,19 @@ export default function AdminAnalyticsDashboard() {
                 <div className="flex justify-between items-center mb-6">
                   <div>
                     <h3 className="text-lg font-bold text-white">
-                      📈 Biểu Đồ Tăng Trưởng {currentSelectedAccount ? `Tài Khoản #${currentSelectedAccount.account_number}` : 'Toàn Hệ Thống'}
+                      📈 Biểu Đồ Tăng Trưởng{' '}
+                      {selectedEmail !== 'all'
+                        ? `Danh Mục Của ${currentClientGroup?.displayEmail}`
+                        : 'Toàn Hệ Thống'}
                     </h3>
                     <p className="text-xs text-gray-400">
-                      Mô phỏng lộ trình tăng trưởng vốn từ mức ban đầu (${displayInitial.toLocaleString()}) đến hiện tại (${displayBalance.toLocaleString()})
+                      Tổng vốn ban đầu: ${displayInitial.toLocaleString()} → Hiện tại: ${displayBalance.toLocaleString()} ({scopedTotalAccounts} tài khoản)
                     </p>
                   </div>
                   <span className="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-lg font-mono font-bold">
-                    {displayProfitPercent >= 0 ? `+${displayProfitPercent.toFixed(2)}%` : `${displayProfitPercent.toFixed(2)}%`}
+                    {displayProfitPercent >= 0
+                      ? `+${displayProfitPercent.toFixed(2)}%`
+                      : `${displayProfitPercent.toFixed(2)}%`}
                   </span>
                 </div>
 
@@ -340,69 +422,48 @@ export default function AdminAnalyticsDashboard() {
                   })}
                 </div>
                 <div className="flex justify-between text-xs text-gray-500 mt-3 font-mono">
-                  <span>Khởi tạo (${displayInitial.toLocaleString()})</span>
+                  <span>Vốn gốc (${displayInitial.toLocaleString()})</span>
                   <span>Giữa kỳ</span>
                   <span>Hiện tại (${displayBalance.toLocaleString()})</span>
                 </div>
               </div>
 
-              {/* Tài khoản lợi nhuận tốt nhất (hoặc Chi tiết khách hàng nếu đang lọc) */}
+              {/* Tài khoản lợi nhuận tốt nhất trong phạm vi đang xem */}
               <div className="bg-gray-900 border border-gray-800 p-6 rounded-2xl shadow-xl flex flex-col justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="text-xl">{currentSelectedAccount ? '👤' : '🏆'}</span>
+                    <span className="text-xl">🏆</span>
                     <h3 className="text-lg font-bold text-white">
-                      {currentSelectedAccount ? 'Hồ Sơ Tài Khoản Đang Chọn' : 'Tài Khoản Lợi Nhuận Tốt Nhất'}
+                      {selectedEmail !== 'all'
+                        ? 'TK Tốt Nhất Của Khách Này'
+                        : 'Tài Khoản Lợi Nhuận Tốt Nhất'}
                     </h3>
                   </div>
                   <p className="text-xs text-gray-400 mb-5">
-                    {currentSelectedAccount
-                      ? 'Thông tin định danh và liên hệ chốt sale.'
+                    {selectedEmail !== 'all'
+                      ? `Tài khoản sinh lời cao nhất trong số ${scopedTotalAccounts} tài khoản của khách.`
                       : 'Tài khoản dẫn đầu hiệu suất sinh lời toàn hệ thống.'}
                   </p>
 
-                  {currentSelectedAccount ? (
-                    <div className="bg-gray-950 border border-gray-800 p-5 rounded-xl space-y-3 font-mono text-xs">
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Số TK (ID):</span>
-                        <span className="text-white font-bold">{currentSelectedAccount.account_number}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Email:</span>
-                        <span className="text-blue-400">{currentSelectedAccount.user_email}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">SĐT / Zalo:</span>
-                        <span className="text-emerald-400 font-bold">
-                          {currentSelectedAccount.zalo_number || 'Chưa cập nhật'}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-gray-500">Server / Sàn:</span>
-                        <span className="text-gray-200">{currentSelectedAccount.server_broker}</span>
-                      </div>
-                      <div className="pt-2 border-t border-gray-800">
-                        <span className="text-gray-500 block mb-1">Ghi chú (Notes):</span>
-                        <span className="text-yellow-400 font-sans">
-                          {currentSelectedAccount.custom_notes || 'Không có ghi chú'}
-                        </span>
-                      </div>
-                    </div>
-                  ) : bestAccount ? (
+                  {bestAccount ? (
                     <div className="bg-gray-950 border border-blue-900/50 p-5 rounded-xl space-y-4 shadow-inner">
                       <div className="flex justify-between items-center">
                         <span className="text-xs bg-blue-900/40 text-blue-400 px-2.5 py-1 rounded font-mono font-bold border border-blue-800/50">
                           ID: {bestAccount.account_number}
                         </span>
                         <span className="text-xs text-emerald-400 font-bold font-mono bg-emerald-950/60 px-2.5 py-1 rounded border border-emerald-800/50">
-                          +{bestAccount.profitPercent.toFixed(2)}%
+                          {bestAccount.profitPercent >= 0 ? '+' : ''}
+                          {bestAccount.profitPercent.toFixed(2)}%
                         </span>
                       </div>
 
                       <div>
-                        <div className="text-xs text-gray-500">Khách hàng / Ghi chú</div>
-                        <div className="text-sm font-semibold text-white mt-0.5 truncate">
-                          {bestAccount.custom_notes || bestAccount.user_email}
+                        <div className="text-xs text-gray-500">Email & Ghi chú</div>
+                        <div className="text-sm font-semibold text-blue-400 mt-0.5 truncate">
+                          {bestAccount.user_email}
+                        </div>
+                        <div className="text-xs text-gray-300 mt-1 truncate">
+                          {bestAccount.custom_notes || 'Không có ghi chú'}
                         </div>
                         <div className="text-xs text-emerald-400 font-mono mt-1">
                           📞 Zalo: {bestAccount.zalo_number || 'N/A'}
@@ -418,18 +479,15 @@ export default function AdminAnalyticsDashboard() {
                         </div>
                         <div className="bg-gray-900 p-2.5 rounded-lg">
                           <span className="text-gray-500 block text-[10px]">Lợi nhuận ròng</span>
-                          <span className="text-emerald-400 font-bold text-sm">
-                            +${bestAccount.profit.toLocaleString()}
+                          <span
+                            className={`font-bold text-sm ${
+                              bestAccount.profit >= 0 ? 'text-emerald-400' : 'text-red-400'
+                            }`}
+                          >
+                            {bestAccount.profit >= 0 ? '+' : ''}${bestAccount.profit.toLocaleString()}
                           </span>
                         </div>
                       </div>
-
-                      <button
-                        onClick={() => setSelectedAccountId(String(bestAccount.id))}
-                        className="w-full bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-500/30 text-xs font-semibold py-2 rounded-lg transition"
-                      >
-                        🔍 Xem chi tiết tài khoản này
-                      </button>
                     </div>
                   ) : (
                     <div className="text-center py-10 text-gray-500 text-sm">Chưa có dữ liệu tài khoản.</div>
@@ -442,18 +500,19 @@ export default function AdminAnalyticsDashboard() {
               </div>
             </div>
 
-            {/* 3. BỘ 3 BIỂU ĐỒ TRÒN (DONUT CHARTS) CHO TOÀN HỆ THỐNG */}
+            {/* 3. BỘ 3 BIỂU ĐỒ TRÒN (TỰ ĐỘNG CẬP NHẬT THEO EMAIL KHÁCH HÀNG HOẶC TOÀN HỆ THỐNG) */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               
-              {/* BIỂU ĐỒ TRÒN 1: LỢI NHUẬN TOÀN HỆ THỐNG */}
+              {/* BIỂU ĐỒ TRÒN 1: TỶ LỆ TÀI KHOẢN CÓ LÃI */}
               <div className="bg-gray-900 border border-gray-800 p-6 rounded-2xl shadow-xl space-y-5">
                 <div>
-                  <h3 className="text-base font-bold text-white">🎯 Biểu Đồ Tròn Lợi Nhuận Hệ Thống</h3>
-                  <p className="text-xs text-gray-400 mt-0.5">Tỷ lệ tài khoản có lãi và đóng góp lợi nhuận.</p>
+                  <h3 className="text-base font-bold text-white">🎯 Biểu Đồ Tròn Lợi Nhuận</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Tỷ lệ tài khoản có lãi trong {scopedTotalAccounts} tài khoản đang xem.
+                  </p>
                 </div>
 
                 <div className="flex items-center gap-6">
-                  {/* Donut Chart bằng CSS Conic Gradient */}
                   <div
                     className="w-28 h-28 rounded-full flex items-center justify-center shrink-0 shadow-lg"
                     style={{
@@ -489,16 +548,18 @@ export default function AdminAnalyticsDashboard() {
                 </div>
               </div>
 
-              {/* BIỂU ĐỒ TRÒN 2: PHÂN BỔ VỐN (CAPITAL ALLOCATION) */}
+              {/* BIỂU ĐỒ TRÒN 2: PHÂN BỔ VỐN GIỮA CÁC TÀI KHOẢN */}
               <div className="bg-gray-900 border border-gray-800 p-6 rounded-2xl shadow-xl space-y-5">
                 <div>
-                  <h3 className="text-base font-bold text-white">🍩 Biểu Đồ Phân Bổ Vốn (Balance)</h3>
-                  <p className="text-xs text-gray-400 mt-0.5">Tỷ trọng số dư các tài khoản lớn nhất hệ thống.</p>
+                  <h3 className="text-base font-bold text-white">🍩 Phân Bổ Vốn (Balance Share)</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Tỷ trọng vốn giữa các tài khoản {selectedEmail !== 'all' ? 'của khách này' : 'lớn nhất'}.
+                  </p>
                 </div>
 
                 <div className="space-y-3">
                   {top4BalanceAccounts.map((acc, index) => {
-                    const pct = totalSystemBalance > 0 ? ((acc.balance / totalSystemBalance) * 100).toFixed(1) : '0.0';
+                    const pct = displayBalance > 0 ? ((acc.balance / displayBalance) * 100).toFixed(1) : '0.0';
                     const barColors = ['bg-blue-500', 'bg-cyan-400', 'bg-indigo-500', 'bg-emerald-500'];
                     return (
                       <div key={String(acc.id)} className="space-y-1">
@@ -525,13 +586,13 @@ export default function AdminAnalyticsDashboard() {
                         <span className="text-gray-400">Các tài khoản khác</span>
                         <span className="text-gray-400">
                           ${otherBalanceSum.toLocaleString()} (
-                          {((otherBalanceSum / totalSystemBalance) * 100).toFixed(1)}%)
+                          {((otherBalanceSum / displayBalance) * 100).toFixed(1)}%)
                         </span>
                       </div>
                       <div className="w-full bg-gray-950 h-2 rounded-full overflow-hidden border border-gray-800">
                         <div
                           className="bg-gray-600 h-full rounded-full"
-                          style={{ width: `${(otherBalanceSum / totalSystemBalance) * 100}%` }}
+                          style={{ width: `${(otherBalanceSum / displayBalance) * 100}%` }}
                         ></div>
                       </div>
                     </div>
@@ -539,11 +600,13 @@ export default function AdminAnalyticsDashboard() {
                 </div>
               </div>
 
-              {/* BIỂU ĐỒ TRÒN 3: CÁC TÀI KHOẢN TRONG HỆ THỐNG */}
+              {/* BIỂU ĐỒ TRÒN 3: TRẠNG THÁI CÁC TÀI KHOẢN */}
               <div className="bg-gray-900 border border-gray-800 p-6 rounded-2xl shadow-xl space-y-5">
                 <div>
-                  <h3 className="text-base font-bold text-white">📊 Biểu Đồ Tròn Trạng Thái Tài Khoản</h3>
-                  <p className="text-xs text-gray-400 mt-0.5">Cơ cấu trạng thái vận hành toàn bộ tài khoản.</p>
+                  <h3 className="text-base font-bold text-white">📊 Trạng Thái Các Tài Khoản</h3>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    Cơ cấu vận hành của {scopedTotalAccounts} tài khoản đang hiển thị.
+                  </p>
                 </div>
 
                 <div className="flex items-center gap-6">
@@ -556,8 +619,8 @@ export default function AdminAnalyticsDashboard() {
                     }}
                   >
                     <div className="w-20 h-20 bg-gray-900 rounded-full flex flex-col items-center justify-center">
-                      <span className="text-lg font-black text-white font-mono">{totalAccounts}</span>
-                      <span className="text-[9px] text-gray-400 uppercase">Tổng Acc</span>
+                      <span className="text-lg font-black text-white font-mono">{scopedTotalAccounts}</span>
+                      <span className="text-[9px] text-gray-400 uppercase">Tài khoản</span>
                     </div>
                   </div>
 
@@ -591,6 +654,73 @@ export default function AdminAnalyticsDashboard() {
                 </div>
               </div>
 
+            </div>
+
+            {/* 4. BẢNG DANH SÁCH CHI TIẾT CÁC TÀI KHOẢN THUỘC EMAIL ĐANG LỌC */}
+            <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden shadow-xl">
+              <div className="p-5 border-b border-gray-800 flex justify-between items-center">
+                <div>
+                  <h3 className="font-bold text-white text-base">
+                    📋 Danh Sách Tài Khoản Đang Phân Tích ({scopedTotalAccounts} tài khoản)
+                  </h3>
+                  <p className="text-xs text-gray-400 mt-0.5">
+                    {selectedEmail !== 'all'
+                      ? `Tất cả tài khoản được khai báo dưới email: ${currentClientGroup?.displayEmail}`
+                      : 'Toàn bộ tài khoản trên hệ thống.'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs font-mono">
+                  <thead className="bg-gray-950 text-gray-400 uppercase border-b border-gray-800">
+                    <tr>
+                      <th className="p-4">ID Tài Khoản</th>
+                      <th className="p-4">Email Khách Hàng</th>
+                      <th className="p-4">Sàn / Server</th>
+                      <th className="p-4">Vốn Gốc</th>
+                      <th className="p-4">Balance</th>
+                      <th className="p-4">Equity</th>
+                      <th className="p-4">Lãi / Lỗ (P/L)</th>
+                      <th className="p-4">Trạng Thái</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-800/70">
+                    {scopedAccounts.map((acc) => {
+                      const profit = acc.balance - acc.initial_balance;
+                      const profitPct = acc.initial_balance > 0 ? (profit / acc.initial_balance) * 100 : 0;
+                      return (
+                        <tr key={String(acc.id)} className="hover:bg-gray-800/40 transition">
+                          <td className="p-4 font-bold text-white">{acc.account_number}</td>
+                          <td className="p-4 text-blue-400 font-sans">{acc.user_email}</td>
+                          <td className="p-4 text-gray-300 font-sans">{acc.server_broker}</td>
+                          <td className="p-4 text-gray-400">${acc.initial_balance.toLocaleString()}</td>
+                          <td className="p-4 text-white font-bold">${acc.balance.toLocaleString()}</td>
+                          <td className="p-4 text-cyan-400">${acc.equity.toLocaleString()}</td>
+                          <td
+                            className={`p-4 font-bold ${
+                              profit >= 0 ? 'text-emerald-400' : 'text-red-400'
+                            }`}
+                          >
+                            {profit >= 0 ? '+' : ''}${profit.toLocaleString()} ({profitPct.toFixed(1)}%)
+                          </td>
+                          <td className="p-4">
+                            <span
+                              className={`px-2.5 py-1 rounded-full text-[10px] font-sans font-bold ${
+                                acc.bot_status === 'Running'
+                                  ? 'bg-emerald-950 text-emerald-400 border border-emerald-800'
+                                  : 'bg-yellow-950 text-yellow-400 border border-yellow-800'
+                              }`}
+                            >
+                              {acc.bot_status}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </>
         )}
